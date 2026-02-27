@@ -1,0 +1,8 @@
+venv/
+downloads/
+cookies.txt
+google_credentials.json
+__pycache__/
+*.pyc
+.env
+.DS_Store

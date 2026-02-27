@@ -1,0 +1,14 @@
+[Unit]
+Description=Telegram Archive Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/archive_worker
+ExecStart=/root/archive_worker/venv/bin/python3 telegram_bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

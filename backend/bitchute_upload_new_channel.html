@@ -1,0 +1,315 @@
+<!DOCTYPE html><html><head>
+        <meta charset="utf8">
+        <meta name="viewport" content="width=device-width">
+
+        <title>Upload</title>
+
+        <link rel="icon" href="/static/upload/img/favicon.ico">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+        <link href="/static/upload/css/filepond.css" rel="stylesheet" type="text/css">
+        <link href="/static/upload/css/filepond-plugin-file-poster.css" rel="stylesheet" type="text/css">
+        <link href="/static/upload/css/filepond-plugin-media-preview.css" rel="stylesheet" type="text/css">
+        <link href="/static/upload/css/pintura.css" rel="stylesheet" type="text/css">
+
+        <link rel="apple-touch-icon" sizes="57x57" href="/static/upload/img/apple-icon-57x57.png">
+        <link rel="apple-touch-icon" sizes="60x60" href="/static/upload/img/apple-icon-60x60.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/static/upload/img/apple-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="76x76" href="/static/upload/img/apple-icon-76x76.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/static/upload/img/apple-icon-114x114.png">
+        <link rel="apple-touch-icon" sizes="120x120" href="/static/upload/img/apple-icon-120x120.png">
+        <link rel="apple-touch-icon" sizes="144x144" href="/static/upload/img/apple-icon-144x144.png">
+        <link rel="apple-touch-icon" sizes="152x152" href="/static/upload/img/apple-icon-152x152.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/upload/img/apple-icon-180x180.png">
+        <link rel="icon" type="image/png" sizes="192x192" href="/static/upload/img/android-icon-192x192.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/upload/img/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="96x96" href="/static/upload/img/favicon-96x96.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/upload/img/favicon-16x16.png">
+        <meta name="msapplication-TileColor" content="#ffffff">
+        <meta name="msapplication-TileImage" content="/static/upload/img/ms-icon-144x144.png">
+
+        <style>
+            main {
+                max-width: 30em;
+            }
+        </style>
+    </head>
+    <body class="bg-light">
+
+
+        <header>
+            <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+                <a href="https://www.bitchute.com"><img src="/static/upload/img/logo-icon-day.png" alt="Bitchute" width="32" height="32"></a>
+            </div>
+        </header>
+
+        <div class="container p-3" id="mainpage">
+            <form class="needs-validation" novalidate="">
+            <div class="row">
+                
+
+            <div class="col-md-5 order-md-1">
+            <div class="form-group w-100">
+                <label for="videoInput">Video File <span class="text-muted">(Required)</span></label>
+                <div class="filepond--root filepond--hopper" id="videoInput" data-style-button-remove-item-position="left" data-style-button-process-item-position="right" data-style-load-indicator-position="right" data-style-progress-indicator-position="right" data-style-button-remove-item-align="false" data-style-image-editor-button-edit-item-position="bottom center" style="height: 76px;"><input class="filepond--browser" type="file" id="filepond--browser-sec0sec5x" name="videoInput" aria-controls="filepond--assistant-sec0sec5x" aria-labelledby="filepond--drop-label-sec0sec5x" accept="video/mp4,video/webm,video/ogg,video/x-ms-wmv,video/x-msvideo,video/quicktime,video/x-matroska" required=""><div class="filepond--drop-label" style="transform: translate3d(0px, 0px, 0px); opacity: 1;"><label for="filepond--browser-sec0sec5x" id="filepond--drop-label-sec0sec5x" aria-hidden="true">Drag &amp; drop your video or <span class="filepond--label-action" tabindex="0">browse</span></label></div><div class="filepond--list-scroller" style="transform: translate3d(0px, 0px, 0px);"><ul class="filepond--list" role="list"></ul></div><div class="filepond--panel filepond--panel-root" data-scalable="true"><div class="filepond--panel-top filepond--panel-root"></div><div class="filepond--panel-center filepond--panel-root" style="transform: translate3d(0px, 8px, 0px) scale3d(1, 0.6, 1);"></div><div class="filepond--panel-bottom filepond--panel-root" style="transform: translate3d(0px, 68px, 0px);"></div></div><span class="filepond--assistant" id="filepond--assistant-sec0sec5x" role="status" aria-live="polite" aria-relevant="additions"></span><fieldset class="filepond--data"></fieldset><div class="filepond--drip"></div></div>
+                <div class="mt-3 mb-3"><button id="thumbnailButton" type="button" class="btn btn-primary">Grab Thumbnail</button></div>
+            </div>
+            <div class="form-group w-100">
+                <label for="thumbnailInput">Thumbnail <span class="text-muted">(Required)</span></label>
+                <div class="filepond--root filepond--hopper" id="thumbnailInput" data-style-button-remove-item-position="left" data-style-button-process-item-position="right" data-style-load-indicator-position="right" data-style-progress-indicator-position="right" data-style-button-remove-item-align="false" data-style-image-editor-button-edit-item-position="bottom center" style="height: 76px;"><input class="filepond--browser" type="file" id="filepond--browser-34d3u29ea" name="thumbnailInput" aria-controls="filepond--assistant-34d3u29ea" aria-labelledby="filepond--drop-label-34d3u29ea" accept="image/jpeg,image/jpg,image/png" required=""><div class="filepond--drop-label" style="transform: translate3d(0px, 0px, 0px); opacity: 1;"><label for="filepond--browser-34d3u29ea" id="filepond--drop-label-34d3u29ea" aria-hidden="true">Drag &amp; drop your thumbnail or <span class="filepond--label-action" tabindex="0">browse</span></label></div><div class="filepond--list-scroller" style="transform: translate3d(0px, 0px, 0px);"><ul class="filepond--list" role="list"></ul></div><div class="filepond--panel filepond--panel-root" data-scalable="true"><div class="filepond--panel-top filepond--panel-root"></div><div class="filepond--panel-center filepond--panel-root" style="transform: translate3d(0px, 8px, 0px) scale3d(1, 0.6, 1);"></div><div class="filepond--panel-bottom filepond--panel-root" style="transform: translate3d(0px, 68px, 0px);"></div></div><span class="filepond--assistant" id="filepond--assistant-34d3u29ea" role="status" aria-live="polite" aria-relevant="additions"></span><fieldset class="filepond--data"></fieldset><div class="filepond--drip"></div></div>
+            </div>
+            </div>
+
+            <div class="col-md-7 order-md-2 mb-4">
+
+            <div class="form-group">
+                <label for="title">Video Title <span class="text-muted">(Required)</span></label>
+                <input type="title" class="form-control" id="title" placeholder="Title" maxlength="100" minlength="3" required="">
+                <div class="valid-feedback">
+                    Looks good!
+                </div>
+                <div class="invalid-feedback">
+                    Enter between 3 and 100 characters!
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label for="description">Description <span class="text-muted">(Optional)</span></label>
+                <textarea class="form-control" id="description" rows="3" maxlength="3000"></textarea>
+            </div>
+
+            <div class="form-group mt-3">
+                <label for="sensitivity">Content Sensitivity <span class="text-muted">(Required)</span></label>
+                <select class="form-control" id="sensitivity" name="sensitivity" required="">
+                    <option value="10" selected="selected">Normal - Suitable for ages 16 and over</option>
+                    <option value="40">NSFW - Not safe for viewing at work</option>
+                    <option value="70">NSFL - Should be viewed with discretion</option>
+                </select>
+            </div>
+
+            <div class="form-group mt-3">
+                <label for="hashtahs">Search Terms <span class="text-muted">(Max 3, separated by spaces)</span></label>
+                <input type="hashtags" class="form-control" id="hashtags" placeholder="Search Terms" maxlength="60" pattern="[a-zA-Z ]+">
+		<div class="valid-feedback">
+                    Looks good!
+                </div>
+		<div class="invalid-feedback">
+                    Only use letters A to Z.
+                </div>
+            </div>
+
+            <div class="form-check mt-3">
+                <input type="checkbox" class="form-check-input" id="publish" checked="">
+                <label class="form-check-label" for="publish">Publish right away</label>
+            </div>
+            
+            <div class="mt-3">
+                <button class="btn btn-primary" type="submit">Proceed</button>
+            </div>
+
+            </div>
+            </div>
+            </form>
+        </div>
+
+        <div class="modal" tabindex="-1" id="modal">
+            <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ERROR!</h5>
+                <button type="button" class="btn-close" onclick="$('#modal').hide()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="$('#modal').hide()">Close</button>
+            </div>
+            </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+        <script src="/static/upload/js/filepond.js"></script>
+        <script src="/static/upload/js/filepond-plugin-file-poster.js"></script>
+        <script src="/static/upload/js/filepond-plugin-file-validate-type.js"></script>
+        <script src="/static/upload/js/filepond-plugin-media-preview.js"></script>
+        <script src="https://up00.bitchute.com/static/upload/js/filepond-plugin-file-validate-size.js"></script>
+        <script src="https://up00.bitchute.com/static/upload/js/filepond-plugin-file-rename.js"></script>
+        <script src="/static/upload/js/FilePondPluginImageEditor.js"></script>
+
+        <script type="module">
+
+            import {
+                openEditor,
+                processImage,
+                createDefaultImageReader,
+                createDefaultImageWriter,
+                legacyDataToImageState,
+                getEditorDefaults,
+            } from '/static/upload/js/pintura.js';
+
+            FilePond.registerPlugin(
+                FilePondPluginFileValidateType,
+                FilePondPluginImageEditor,
+                FilePondPluginFilePoster,
+                FilePondPluginFileValidateSize,
+                FilePondPluginMediaPreview,
+                FilePondPluginFileRename
+            );
+
+            var thumbnailPond = FilePond.create(document.getElementById('thumbnailInput'), {
+                imageEditor: {
+                    legacyDataToImageState: legacyDataToImageState,
+                    createEditor: openEditor,
+                    imageReader: [createDefaultImageReader],
+
+                    imageWriter: [
+                        createDefaultImageWriter,
+                        {
+                            targetSize: {
+                                width: 1280,
+                            },
+                        },
+                    ],
+                    imageProcessor: processImage,
+                    editorOptions: {
+                        ...getEditorDefaults(),
+                        stickers: ['P'],
+                        imageCropAspectRatio: 16 / 9,
+                    },
+                },             
+
+                allowReorder: true,
+                server:{
+                    process: {
+                        url: './process_thumbnail',
+                        method: 'POST',
+                        withCredentials: false,
+                        onload: (response) => response.key,
+                        onerror: (response) => response.data,
+                        ondata: (formData) => {
+                            console.log('on_data');
+                            return formData;
+                        },
+                        headers: {"X-VIDEOID":"NjXrNraWUhfa","X-CHANNELID":"13wDKAYNAfQE"},
+                    },
+                },
+                allowFileTypeValidation: true,
+                acceptedFileTypes: ['image/jpeg','image/jpg','image/png'],
+                allowFileSizeValidation: true,
+                minFileSize: '20KB',
+                maxFileSize: '10MB',
+                maxTotalFileSize: '10MB',
+                labelMaxFileSize: 'Maximum size 10MB',
+		labelMinFileSize: 'Thumbnail image too low quality',
+                labelIdle: `Drag & drop your thumbnail or <span class="filepond--label-action">browse</span>`,
+            });
+
+            thumbnailPond.setOptions({
+                fileRenameFunction: (file) => {
+                    return 'NjXrNraWUhfa'+file.extension.toLowerCase();
+                },
+            });
+
+            var vInput = document.getElementById('videoInput');
+            var videoPond = FilePond.create(vInput, {
+                allowReorder: true,
+                allowFileSizeValidation: true,
+                minFileSize: '1MB',
+                maxFileSize: '2048MB',
+                maxTotalFileSize: '2048MB',
+                labelMaxFileSize: 'Maximum size 2GB',
+                labelIdle: `Drag & drop your video or <span class="filepond--label-action">browse</span>`,
+
+                server:{
+                    process: {
+                        url: './process_video',
+                        method: 'POST',
+                        withCredentials: false,
+                        onload: (response) => response.key,
+                        onerror: (response) => response.data,
+                        ondata: (formData) => {
+                            console.log('on_data');
+                            return formData;
+                        },
+                    },
+                    headers: {"X-VIDEOID":"NjXrNraWUhfa","X-CHANNELID":"13wDKAYNAfQE"},
+                },
+                allowFileTypeValidation: true,
+                acceptedFileTypes: ['video/mp4','video/webm','video/ogg','video/x-ms-wmv','video/x-msvideo','video/quicktime','video/x-matroska'],
+            });
+
+            videoPond.setOptions({
+                fileRenameFunction: (file) => {
+                    return 'NjXrNraWUhfa-video'+file.extension.toLowerCase();
+                },
+            });
+
+            $( "#thumbnailButton" ).click(function() {
+                var video = document.getElementsByTagName("video")[0];
+                if (video == null) { return; }
+                const canvas = document.createElement("canvas");
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataURL = canvas.toDataURL();
+                thumbnailPond.addFile(dataURL);
+            });
+
+            $(document).ready(function() {
+                $("#mainpage").removeClass('d-none');
+            });
+
+            (function () {
+                'use strict'
+                var forms = document.querySelectorAll('.needs-validation')
+                Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        console.log(event);
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        } else {
+                            console.log("blastoff!!!");
+                            event.preventDefault()
+                            event.stopPropagation()
+                            $.post(
+                                './finish_upload',
+                                {'csrfmiddlewaretoken':'9U4aAn0s2wCM4PzqSUyZvOItPZZzGLkZh2G2Ub9PlPhHYwLQYDNcWFlqLmpwwqwJ',
+                                'key':'W3siY2hhbm5lbF9pZCI6ICIxM3dES0FZTkFmUUUiLCAidmlkZW9faWQiOiAiTmpYck5yYVdVaGZhIn1d f5cbcf65a759a252a82d039dd1e1b34a48a91d180c5eb8046e6c7eb21112f9f5 1772130177',
+                                'title': $('#title').val(),
+                                'description': $('#description').val(),
+                                'sensitivity':$('#sensitivity').find(':selected').val(),
+                                'hashtags': $('#hashtags').val(),
+                                'publish':$('#publish').prop('checked')
+                                },
+                                function(result) {
+                                    console.log(result);
+                                    if (result.result==false) {
+                                        $("#errorMessage").text(result.error);
+                                        $("#modal").show();
+                                    } else {
+ 					const urlParams = new URLSearchParams(window.location.search);
+                                        const country = urlParams.get('country');
+                                        if (country === 'GB') {	
+ 						window.location.href = "https://www.bitchute.com/content";
+ 					} else {
+ 						window.location.href = "https://www.bitchute.com/content";
+ 					}
+                                    }
+                                }
+                            );
+                        }
+                    form.classList.add('was-validated')
+                    }, false)
+                })
+            })()
+
+        </script>
+    
+
+</body></html>
