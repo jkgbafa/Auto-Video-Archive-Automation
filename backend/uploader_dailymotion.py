@@ -1,5 +1,6 @@
 import os
 import requests
+import time
 from config import DAILYMOTION_USERNAME, DAILYMOTION_PASSWORD, DAILYMOTION_API_KEY, DAILYMOTION_API_SECRET, DAILYMOTION_REFRESH_TOKEN
 
 def authenticate():
@@ -18,14 +19,19 @@ def authenticate():
             'client_secret': DAILYMOTION_API_SECRET,
             'refresh_token': DAILYMOTION_REFRESH_TOKEN,
         }
-        response = requests.post(auth_url, data=payload)
-        if response.status_code == 200:
-            token_data = response.json()
-            token = token_data.get('access_token')
-            if token:
-                print("Authenticated via refresh token.")
-                return token
-        print(f"Refresh token failed: {response.text}. Trying password grant...")
+        try:
+            response = requests.post(auth_url, data=payload, timeout=30)
+            if response.status_code == 200:
+                token_data = response.json()
+                token = token_data.get('access_token')
+                if token:
+                    print("✅ AUTH SUCCESS: Authenticated via OAuth refresh token.")
+                    return token
+            print(f"⚠️ AUTH WARNING: Refresh token failed (HTTP {response.status_code}): {response.text}.")
+        except Exception as e:
+            print(f"⚠️ AUTH WARNING: Refresh token network error: {e}")
+            
+    print("⚠️ AUTH WARNING: Falling back to deprecated password grant method!")
     
     # Fallback: password grant (deprecated, may not work)
     payload = {
@@ -37,10 +43,15 @@ def authenticate():
         'scope': 'manage_videos'
     }
     
-    response = requests.post(auth_url, data=payload)
+    response = requests.post(auth_url, data=payload, timeout=30)
     response.raise_for_status()
     token_data = response.json()
-    return token_data.get('access_token')
+    token = token_data.get('access_token')
+    if token:
+        print("✅ AUTH SUCCESS: Authenticated via deprecated password grant.")
+        return token
+    else:
+        raise Exception("Auth failed: No access token in response.")
 
 def get_upload_url(access_token):
     """
@@ -48,7 +59,7 @@ def get_upload_url(access_token):
     """
     url = "https://api.dailymotion.com/file/upload"
     headers = {'Authorization': f'Bearer {access_token}'}
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=30)
     response.raise_for_status()
     return response.json().get('upload_url')
 
@@ -58,7 +69,8 @@ def upload_file(upload_url, video_path):
     Returns the uploaded file URL necessary for the next step.
     """
     with open(video_path, 'rb') as f:
-        response = requests.post(upload_url, files={'file': f})
+        # 7200 seconds = 2 hours timeout for large files
+        response = requests.post(upload_url, files={'file': f}, timeout=7200)
         response.raise_for_status()
         return response.json().get('url')
 
@@ -82,7 +94,7 @@ def create_video(access_token, file_url, title, description, tags=None, private=
     if tags:
         payload['tags'] = ','.join(tags[:10])
         
-    response = requests.post(url, headers=headers, data=payload)
+    response = requests.post(url, headers=headers, data=payload, timeout=60)
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
@@ -100,26 +112,46 @@ def upload_to_dailymotion(video_path, title, description, tags=None):
     """
     Full pipeline to upload a video to Dailymotion.
     Gets a fresh token every time to avoid 403s from expired tokens.
+    Implements exponential backoff retries for transient errors.
     """
-    try:
-        print(f"Authenticating Dailymotion...")
-        token = authenticate()  # Fresh token every upload
-        
-        print(f"Getting upload URL...")
-        upload_url = get_upload_url(token)
-        
-        print(f"Uploading file {video_path}...")
-        file_url = upload_file(upload_url, video_path)
-        
-        print(f"Publishing video...")
-        video_data = create_video(token, file_url, title, description, tags)
-        
-        if video_data.get("_internal_status") == "RATE_LIMITED":
-            print(f"Dailymotion daily limit reached!")
-            return "RATE_LIMITED"
+    max_retries = 3
+    delays = [30, 60, 120]
+    
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"Authenticating Dailymotion (Attempt {attempt + 1})...")
+            token = authenticate()  # Fresh token every upload
             
-        print(f"Successfully uploaded to Dailymotion: {video_data.get('id')}")
-        return video_data.get('id')
-    except Exception as e:
-        print(f"Dailymotion upload failed: {e}")
-        return None
+            print(f"Getting upload URL...")
+            upload_url = get_upload_url(token)
+            
+            print(f"Uploading file {video_path}...")
+            file_url = upload_file(upload_url, video_path)
+            
+            print(f"Publishing video...")
+            video_data = create_video(token, file_url, title, description, tags)
+            
+            if video_data.get("_internal_status") == "RATE_LIMITED":
+                print(f"Dailymotion daily limit reached!")
+                return "RATE_LIMITED"
+                
+            print(f"Successfully uploaded to Dailymotion: {video_data.get('id')}")
+            return video_data.get('id')
+            
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            if 400 <= status_code < 500 and status_code != 429:
+                print(f"Permanent HTTP Error {status_code} during Dailymotion upload: {e}. Skipping retries.")
+                return None
+            else:
+                print(f"Transient HTTP Error {status_code} during upload: {e}")
+        except Exception as e:
+            print(f"Dailymotion upload error: {e}")
+            
+        if attempt < max_retries:
+            delay = delays[attempt]
+            print(f"Retrying in {delay} seconds...")
+            time.sleep(delay)
+            
+    print(f"Dailymotion upload failed after {max_retries + 1} attempts.")
+    return None

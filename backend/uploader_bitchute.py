@@ -20,40 +20,47 @@ def _convert_thumbnail_to_jpeg(thumb_path):
         print(f"Could not convert thumbnail: {e}")
         return None
 
-def upload_to_bitchute(video_path, title, description, thumbnail_path=None):
+def upload_to_bitchute(video_path, title, description, thumbnail_path=None, username=None, password=None):
     """
     Upload a video to Bitchute using Playwright.
     Since Bitchute has no API, we must automate the browser.
     """
+    uname = username if username else BITCHUTE_USERNAME
+    pwd = password if password else BITCHUTE_PASSWORD
+    
     try:
         # Convert thumbnail to JPEG if needed
         thumb_to_use = _convert_thumbnail_to_jpeg(thumbnail_path)
         
         with sync_playwright() as p:
-            # Launch headless chromium
-            browser = p.chromium.launch(headless=True)
+            # Launch visible chromium to bypass Cloudflare
+            browser = p.chromium.launch(headless=False)
             page = browser.new_page()
 
             # Navigate to login page
             print("Navigating to Bitchute login...")
-            page.goto("https://old.bitchute.com/accounts/login/")
+            page.goto("https://old.bitchute.com/accounts/login/", timeout=60000)
             
             # Fill login credentials
-            page.fill("input[name='username']", BITCHUTE_USERNAME)
-            page.fill("input[name='password']", BITCHUTE_PASSWORD)
+            page.fill("input[name='username']", uname)
+            page.fill("input[name='password']", pwd)
             page.click("#submit")
-            page.wait_for_load_state("networkidle")
-
+            
+            # Wait a few seconds for the POST request to process and redirect
+            page.wait_for_timeout(5000)
+            
             # Check if login was successful
             if "login" in page.url:
-                print("Failed to login to Bitchute. Check credentials.")
+                print("Failed to login to Bitchute. Check credentials. Page URL is still: " + page.url)
+                # Take screenshot for debugging just in case there's a captcha
+                page.screenshot(path="bitchute_login_failed.png")
                 browser.close()
                 return False
 
             print("Logged in successfully. Navigating to upload page...")
             # Navigate to upload page (Bitchute redirects to /channel/new/ if you have no channel)
-            page.goto("https://old.bitchute.com/myupload/")
-            page.wait_for_load_state("networkidle")
+            page.goto("https://old.bitchute.com/myupload/", timeout=60000)
+            page.wait_for_load_state("domcontentloaded")
 
             if "channel/new" in page.url:
                 print("Error: You must create a Bitchute channel first in your account before uploading!")

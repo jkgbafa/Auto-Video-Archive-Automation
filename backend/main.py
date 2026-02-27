@@ -89,9 +89,23 @@ def check_for_new_videos():
                 notify_upload_failed(title, "Bitchute")
                 bc_status = "Failed"
 
-            # 5. Skip Dailymotion for now (auth flow needs fixing)
-            dm_status = "Skipped"
-            dm_url = ""
+            # 5. Upload Dailymotion
+            update_status(entry['id'], "dailymotion", "uploading")
+            dm_id = upload_to_dailymotion(video_path, title, "")
+            
+            if dm_id == "RATE_LIMITED":
+                dm_status = "Rate Limited"
+                dm_url = ""
+            elif dm_id:
+                update_status(entry['id'], "dailymotion", "completed")
+                dm_status = "Uploaded"
+                dm_url = f"https://www.dailymotion.com/video/{dm_id}"
+                notify_upload_success(title, "Dailymotion")
+            else:
+                update_status(entry['id'], "dailymotion", "failed")
+                dm_status = "Failed"
+                dm_url = ""
+                notify_upload_failed(title, "Dailymotion")
 
             # 6. Update Google Sheets
             update_google_sheet(video_url, title, bc_status, dm_status, bc_url, dm_url)
