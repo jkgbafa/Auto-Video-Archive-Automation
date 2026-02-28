@@ -1,78 +1,71 @@
+"""
+Test Cobalt API instances to find one that works for YouTube downloads.
+
+Cobalt v10+ API format:
+  POST /  (not /api/json)
+  Body: {"url": "...", "videoQuality": "max"}
+  Headers: Accept: application/json, Content-Type: application/json
+
+Response on success:
+  {"status": "tunnel"|"redirect", "url": "https://..."}
+"""
 import requests
 import json
-import time
 
-COBALT_INSTANCES = [
-    "https://api.cobalt.tools",
-    "https://cobalt.api.unbound.so",
-    "https://co.wuk.sh",
-    "https://cobalt.qwyx.icu",
-    "https://cobalt-api.kwiatekit.com",
-    "https://cobalt.canine.cloud",
-    "https://api.cobalt.chat"
+# Updated instance list — no-auth, high-score instances from instances.cobalt.best
+instances = [
+    'https://cobalt-backend.canine.tools',
+    'https://cobalt-api.meowing.de',
+    'https://kityune.imput.net',
+    'https://nachos.imput.net',
+    'https://capi.3kh0.net',
 ]
 
-def test_cobalt(video_url):
-    print(f"Testing Cobalt API for: {video_url}")
-    
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "url": video_url,
-        "videoQuality": "max"
-    }
-    
-    working_instances = []
-    
-    for instance in COBALT_INSTANCES:
-        print(f"\nTrying {instance} ...", end=" ")
-        try:
-            res = requests.post(
-                f"{instance}/",
-                headers=headers,
-                json=payload,
-                timeout=15
-            )
-            
-            if res.status_code == 200:
-                data = res.json()
-                if data.get("status") == "redirect" or data.get("status") == "stream" or "url" in data:
-                    dl_url = data.get("url")
-                    if dl_url:
-                        print("SUCCESS! Got URL.")
-                        # Verify with HEAD request
-                        try:
-                            head_res = requests.head(dl_url, timeout=10, allow_redirects=True)
-                            if head_res.status_code == 200:
-                                print(f"  HEAD check passed! Size: {head_res.headers.get('content-length', 'unknown')} bytes")
-                                working_instances.append(instance)
-                            else:
-                                print(f"  HEAD check failed with status: {head_res.status_code}")
-                        except Exception as e:
-                            print(f"  HEAD check error: {e}")
-                    else:
-                        print(f"FAILED (No URL in response: {data})")
-                elif data.get("status") == "error":
-                    print(f"FAILED (API Error: {data.get('text', 'unknown')})")
-                else:
-                    print(f"FAILED (Unknown status: {data})")
-            else:
-                print(f"FAILED (HTTP {res.status_code})")
-        except requests.exceptions.Timeout:
-            print("FAILED (Timeout)")
-        except requests.exceptions.RequestException as e:
-            print(f"FAILED (Connection Error: {type(e).__name__})")
-            
-    print("\n--- Summary ---")
-    if working_instances:
-        print(f"Found {len(working_instances)} working instances:")
-        for w in working_instances:
-            print(f" - {w}")
-    else:
-        print("No working instances found!")
+headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+}
 
-if __name__ == "__main__":
-    test_cobalt("https://www.youtube.com/watch?v=jNQXAC9IVRw")
+# New v10+ payload format
+data = {
+    'url': 'https://www.youtube.com/watch?v=pnBUvlCyGfE',
+    'videoQuality': 'max',
+}
+
+print("Testing Cobalt v10+ API instances...\n")
+
+for instance in instances:
+    api_url = instance.rstrip('/')
+    print(f'Trying {api_url} ...')
+    try:
+        # v10+ uses POST to root, not /api/json
+        response = requests.post(api_url, headers=headers, json=data, timeout=15)
+        print(f'  Status: {response.status_code}')
+
+        resp_data = response.json()
+        print(f'  Response: {json.dumps(resp_data, indent=2)[:500]}')
+
+        status = resp_data.get('status')
+        download_url = resp_data.get('url')
+
+        if response.status_code == 200 and download_url:
+            print(f'\n  SUCCESS with {api_url}')
+            print(f'  Status: {status}')
+            print(f'  Download URL: {download_url[:120]}...')
+
+            # Quick check that the download URL is actually reachable
+            head = requests.head(download_url, timeout=10, allow_redirects=True)
+            content_type = head.headers.get('Content-Type', '')
+            content_length = head.headers.get('Content-Length', 'unknown')
+            print(f'  Content-Type: {content_type}')
+            print(f'  Content-Length: {content_length}')
+            break
+        else:
+            print(f'  FAILED (no download URL or bad status)')
+
+    except requests.exceptions.Timeout:
+        print('  Timeout')
+    except Exception as e:
+        print(f'  Error: {e}')
+
+    print()

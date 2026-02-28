@@ -6,3 +6,27 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+
+# Token & cookie files (sensitive)
+*_token.json
+*_cookies.json
+rumble_cookies.json
+bitchute_cookies.json
+bitchute_token.json
+odysee_token.json
+
+# Log files
+*.log
+
+# Archive tracking files
+*_archive_*.txt
+download_archive.txt
+
+# Debug screenshots
+debug_screenshots/
+
+# Rate limit state
+dm_ratelimit_state_*.json
+
+# Claude
+.claude/

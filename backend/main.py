@@ -1,3 +1,4 @@
+import os
 import time
 import schedule
 import yt_dlp
@@ -23,58 +24,56 @@ def check_for_new_videos():
         'extract_flat': True,
         'quiet': True,
     }
-    
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(YOUTUBE_PLAYLIST_URL, download=False)
         if not info or 'entries' not in info:
             return
-            
+
         entries = [e for e in info['entries'] if e]
         total_videos = len(entries)
         print(f"Total videos in playlist: {total_videos}")
-        
-        # Process all videos in the playlist
-        
+
         # Read downloaded
         with open(DL_ARCHIVE, 'a+') as f:
             f.seek(0)
             downloaded = set(f.read().splitlines())
-            
+
         processed_count = len(downloaded)
-        
+
         # Track which milestones we've hit in this run to avoid spamming
         milestones = [25, 50, 75, 100]
         hit_milestones = [m for m in milestones if processed_count >= (m / 100) * total_videos]
-            
+
         for entry in entries:
             video_url = entry.get('url')
             if entry['id'] in downloaded:
                 continue
-            
+
             # Found new video!
             print(f"New video found: {entry['title']}")
-            
+
             # 1. Download it
             media_info = download_video(video_url)
             if not media_info or not media_info['video_path']:
                 print(f"Failed to download {video_url}")
                 continue
-                
+
             # Update DL archive
             with open(DL_ARCHIVE, 'a') as f:
                 f.write(f"{entry['id']}\n")
-                
+
             title = media_info['title']
             desc = media_info['description']
             video_path = media_info['video_path']
             thumb_path = media_info['thumb_path']
-            
+
             # 2. Add to Database
             add_video(entry['id'], title)
-            
+
             # 3. Notify
             notify_new_video(title)
-            
+
             # 4. Upload Bitchute
             update_status(entry['id'], "bitchute", "uploading")
             success = upload_to_bitchute(video_path, title, "", thumb_path)
@@ -89,37 +88,40 @@ def check_for_new_videos():
                 notify_upload_failed(title, "Bitchute")
                 bc_status = "Failed"
 
-            # 5. Upload Dailymotion
+            # 5. Upload to Dailymotion (now enabled with per-video auth + retries)
+            dm_status = "Pending"
+            dm_url = ""
             update_status(entry['id'], "dailymotion", "uploading")
-            dm_id = upload_to_dailymotion(video_path, title, "")
-            
+
+            dm_id = upload_to_dailymotion(video_path, title, desc)
+
             if dm_id == "RATE_LIMITED":
+                # Rate limited — mark as pending and continue with next video
+                # (run_dailymotion.py handles the 24h sleep; main.py just skips)
                 dm_status = "Rate Limited"
-                dm_url = ""
+                update_status(entry['id'], "dailymotion", "rate_limited")
             elif dm_id:
-                update_status(entry['id'], "dailymotion", "completed")
-                dm_status = "Uploaded"
                 dm_url = f"https://www.dailymotion.com/video/{dm_id}"
+                dm_status = "Uploaded"
+                update_status(entry['id'], "dailymotion", "completed")
                 notify_upload_success(title, "Dailymotion")
             else:
-                update_status(entry['id'], "dailymotion", "failed")
                 dm_status = "Failed"
-                dm_url = ""
+                update_status(entry['id'], "dailymotion", "failed")
                 notify_upload_failed(title, "Dailymotion")
 
             # 6. Update Google Sheets
             update_google_sheet(video_url, title, bc_status, dm_status, bc_url, dm_url)
 
             # 7. Clean up downloaded video to save disk space
-            import os
             if os.path.exists(video_path):
                 os.remove(video_path)
                 print(f"Cleaned up: {video_path}")
-                
+
             # Update counts and check milestones
             processed_count += 1
             downloaded.add(entry['id'])
-            
+
             if total_videos > 0:
                 current_percent = (processed_count / total_videos) * 100
                 for m in milestones:
@@ -128,7 +130,7 @@ def check_for_new_videos():
                         hit_milestones.append(m)
 
 def run_scheduler():
-    print("Starting video archiving worker — Full 1999 Bitchute Transfer...")
+    print("Starting video archiving worker — Full 1999 Bitchute + Dailymotion Transfer...")
     check_for_new_videos()
     print("Transfer complete.")
 

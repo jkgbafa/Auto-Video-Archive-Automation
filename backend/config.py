@@ -25,9 +25,22 @@ DAILYMOTION_REFRESH_TOKEN = os.getenv("DAILYMOTION_REFRESH_TOKEN", "")
 BITCHUTE_USERNAME = os.getenv("BITCHUTE_USERNAME", "")
 BITCHUTE_PASSWORD = os.getenv("BITCHUTE_PASSWORD", "")
 
+# Rumble
+RUMBLE_EMAIL = os.getenv("RUMBLE_EMAIL", "")
+RUMBLE_PASSWORD = os.getenv("RUMBLE_PASSWORD", "")
+RUMBLE_CHANNEL_NAME = os.getenv("RUMBLE_CHANNEL_NAME", "")
+
 # Telegram & Google Sheets (for later integration)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 GOOGLE_SHEET_URL = os.getenv("GOOGLE_SHEET_URL", "")
 
 YOUTUBE_PLAYLIST_URL = os.getenv("YOUTUBE_PLAYLIST_URL", "")
+
+# Odysee
+ODYSEE_EMAIL = os.getenv("ODYSEE_EMAIL", "")
+ODYSEE_PASSWORD = os.getenv("ODYSEE_PASSWORD", "")
+
+# Year-specific playlist URLs (for multi-year pipelines)
+YOUTUBE_PLAYLIST_URL_2000 = os.getenv("YOUTUBE_PLAYLIST_URL_2000", "")
+YOUTUBE_PLAYLIST_URL_2003 = os.getenv("YOUTUBE_PLAYLIST_URL_2003", "")
