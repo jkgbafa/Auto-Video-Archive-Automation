@@ -183,11 +183,15 @@ def run_year(year):
 
     print(f"Fetching playlist: {playlist_url}")
     try:
+        from downloader import COOKIES_FILE
         cmd = [
             YTDLP_VENV_PYTHON, "-m", "yt_dlp",
             "--flat-playlist", "--print-json", "--no-warnings",
             playlist_url,
         ]
+        if os.path.isfile(COOKIES_FILE):
+            cmd.insert(-1, "--cookies")
+            cmd.insert(-1, COOKIES_FILE)
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         entries = []
         for line in result.stdout.strip().split('\n'):

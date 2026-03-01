@@ -18,6 +18,10 @@ else:
     YTDLP_VENV_PYTHON = sys.executable  # fallback: project venv python
 FFMPEG_PATH = os.path.expanduser("~/.local/bin/ffmpeg")
 
+# Cookies file for YouTube authentication (avoids "Sign in to confirm you're not a bot")
+# Place cookies.txt in the backend/ directory
+COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
+
 # Ensure ffmpeg and local bin are on PATH
 LOCAL_BIN = os.path.expanduser("~/.local/bin")
 if LOCAL_BIN not in os.environ.get("PATH", ""):
@@ -43,7 +47,9 @@ def get_video_info(video_url):
         "--no-warnings",
         video_url,
     ]
-    # Only use node/chrome if available (not on headless VPS)
+    if os.path.isfile(COOKIES_FILE):
+        cmd.insert(-1, "--cookies")
+        cmd.insert(-1, COOKIES_FILE)
     if subprocess.run(["which", "node"], capture_output=True).returncode == 0:
         cmd[4:4] = ["--js-runtimes", "node"]
 
@@ -108,7 +114,9 @@ def download_video(video_url, output_prefix=None):
             "--merge-output-format", "mp4",
             video_url,
         ]
-        # Only use node JS runtime if available
+        if os.path.isfile(COOKIES_FILE):
+            cmd.insert(-1, "--cookies")
+            cmd.insert(-1, COOKIES_FILE)
         if subprocess.run(["which", "node"], capture_output=True).returncode == 0:
             cmd.insert(-1, "--js-runtimes")
             cmd.insert(-1, "node")
