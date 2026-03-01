@@ -18,9 +18,30 @@ else:
     YTDLP_VENV_PYTHON = sys.executable  # fallback: project venv python
 FFMPEG_PATH = os.path.expanduser("~/.local/bin/ffmpeg")
 
-# Cookies file for YouTube authentication (avoids "Sign in to confirm you're not a bot")
-# Place cookies.txt in the backend/ directory
+# Cookies: use Chrome browser cookies locally, fall back to cookies.txt on VPS
 COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
+
+
+def _has_chrome_browser():
+    """Check if Chrome/Chromium is installed (means we're running locally)."""
+    for name in ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]:
+        if subprocess.run(["which", name], capture_output=True).returncode == 0:
+            return True
+    # macOS
+    if os.path.exists("/Applications/Google Chrome.app"):
+        return True
+    return False
+
+
+def _add_cookie_args(cmd):
+    """Add cookie authentication args to a yt-dlp command list (before the URL)."""
+    if _has_chrome_browser():
+        cmd.insert(-1, "--cookies-from-browser")
+        cmd.insert(-1, "chrome")
+    elif os.path.isfile(COOKIES_FILE):
+        cmd.insert(-1, "--cookies")
+        cmd.insert(-1, COOKIES_FILE)
+
 
 # Ensure ffmpeg and local bin are on PATH
 LOCAL_BIN = os.path.expanduser("~/.local/bin")
@@ -47,9 +68,7 @@ def get_video_info(video_url):
         "--no-warnings",
         video_url,
     ]
-    if os.path.isfile(COOKIES_FILE):
-        cmd.insert(-1, "--cookies")
-        cmd.insert(-1, COOKIES_FILE)
+    _add_cookie_args(cmd)
     if subprocess.run(["which", "node"], capture_output=True).returncode == 0:
         cmd[4:4] = ["--js-runtimes", "node"]
 
@@ -114,9 +133,7 @@ def download_video(video_url, output_prefix=None):
             "--merge-output-format", "mp4",
             video_url,
         ]
-        if os.path.isfile(COOKIES_FILE):
-            cmd.insert(-1, "--cookies")
-            cmd.insert(-1, COOKIES_FILE)
+        _add_cookie_args(cmd)
         if subprocess.run(["which", "node"], capture_output=True).returncode == 0:
             cmd.insert(-1, "--js-runtimes")
             cmd.insert(-1, "node")
