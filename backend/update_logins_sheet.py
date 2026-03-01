@@ -24,6 +24,7 @@ LOGINS = [
     ["Internxt", "Spain", "ytoffice2023@gmail.com", "SeeMe123!", "5TB Lifetime", "Active", "Phase 2 - Eniola 2021 source"],
     ["Icedrive", "UK", "ytoffice2023@gmail.com", "SeeMe123!", "1TB Lifetime", "Active", "Phase 2 - Eniola 2021 dest (WebDAV)"],
     ["Koofr", "Slovenia", "ytoffice2023@gmail.com", "SeeMe123!", "1TB", "Active", "Phase 2 - Darius 2022 source"],
+    ["Internet Archive", "USA", "TBD", "S3 keys needed", "Free", "Pending", "2001 C3 dest - get keys at archive.org/account/s3.php"],
     ["NicoNico", "Japan", "—", "—", "—", "DROPPED", "No upload API, MFA required, geo-blocked from EU"],
     ["Bilibili", "China", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Active", "Phase 2 - Darius 2020 dest, verified"],
     ["YouTube", "USA", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Active", "Source platform (archiving FROM)"],

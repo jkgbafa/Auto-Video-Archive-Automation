@@ -47,6 +47,7 @@ YOUTUBE_PLAYLIST_URL_2000 = os.getenv("YOUTUBE_PLAYLIST_URL_2000", "")
 YOUTUBE_PLAYLIST_URL_2001 = os.getenv("YOUTUBE_PLAYLIST_URL_2001", "")
 YOUTUBE_PLAYLIST_URL_2002 = os.getenv("YOUTUBE_PLAYLIST_URL_2002", "")
 YOUTUBE_PLAYLIST_URL_2003 = os.getenv("YOUTUBE_PLAYLIST_URL_2003", "")
+YOUTUBE_PLAYLIST_URL_2004 = os.getenv("YOUTUBE_PLAYLIST_URL_2004", "")
 
 # ---- Phase 2: Archive Backup Platforms ----
 
@@ -68,7 +69,9 @@ ICEDRIVE_ACCESS_KEY = os.getenv("ICEDRIVE_ACCESS_KEY", "")  # WebDAV uses Access
 KOOFR_EMAIL = os.getenv("KOOFR_EMAIL", "")
 KOOFR_PASSWORD = os.getenv("KOOFR_PASSWORD", "")
 
-# NicoNico — REMOVED: No upload API, MFA required, geo-blocked from Europe
+# Internet Archive
+IA_ACCESS_KEY = os.getenv("IA_ACCESS_KEY", "")
+IA_SECRET_KEY = os.getenv("IA_SECRET_KEY", "")
 
 # Bilibili
 BILIBILI_EMAIL = os.getenv("BILIBILI_EMAIL", "")

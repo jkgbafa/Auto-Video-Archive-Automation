@@ -1,7 +1,20 @@
 #!/bin/bash
 # ============================================================================
-# LAUNCH ALL TRANSFERS
-# Run this on the VPS: bash launch_all.sh
+# LAUNCH ALL TRANSFERS — Correct Flow
+# Run on VPS: bash launch_all.sh
+# ============================================================================
+#
+# THE FLOW:
+#   1999: YouTube -> BitChute + Dailymotion
+#   2000: YouTube -> Rumble + Bilibili
+#   2001: YouTube -> Odysee + Internet Archive
+#   2002: YouTube -> BitChute + pCloud
+#   2003: YouTube -> Rumble + Dailymotion
+#   2004: YouTube -> Odysee + Bilibili (needs playlist URL)
+#
+#   2020: pCloud -> Bilibili (Darius)
+#   2021: Internxt -> Icedrive (Eniola)
+#
 # ============================================================================
 
 set -e
@@ -13,11 +26,8 @@ LOG_DIR="$PROJECT_DIR/logs"
 mkdir -p "$LOG_DIR"
 
 echo "============================================"
-echo " Auto-Video-Archive-Automation — FULL LAUNCH"
+echo " Auto-Video-Archive — FULL LAUNCH"
 echo "============================================"
-echo ""
-echo "Project dir: $PROJECT_DIR"
-echo "Logs dir:    $LOG_DIR"
 echo ""
 
 # Check Python
@@ -38,42 +48,43 @@ elif [ -d "$PROJECT_DIR/venv" ]; then
 fi
 
 # Install dependencies if needed
-pip install -q pytubefix yt-dlp gspread python-dotenv requests playwright python-telegram-bot biliup 2>/dev/null || true
+pip install -q pytubefix yt-dlp gspread python-dotenv requests playwright python-telegram-bot biliup internetarchive 2>/dev/null || true
 
 cd "$BACKEND"
 
 echo ""
 echo "============================================"
-echo " PHASE 1: YouTube -> All Platforms (1999-2003)"
+echo " PHASE 1: YouTube -> Platforms (1999-2004)"
+echo " Each year goes to its 2 assigned platforms"
 echo "============================================"
 
-# Launch all Phase 1 transfers in background with nohup
+# Launch each year with the correct flow using run_year.py
 for YEAR in 1999 2000 2001 2002 2003; do
-    for PLATFORM in rumble bitchute dailymotion odysee; do
-        SCRIPT="run_${PLATFORM}.py"
-        if [ -f "$SCRIPT" ]; then
-            LOGFILE="$LOG_DIR/${PLATFORM}_${YEAR}.log"
-            echo "  Starting: $SCRIPT $YEAR -> $LOGFILE"
-            nohup $PYTHON "$SCRIPT" "$YEAR" > "$LOGFILE" 2>&1 &
-            sleep 2  # Small delay between launches to avoid rate limits
-        fi
-    done
+    LOGFILE="$LOG_DIR/year_${YEAR}.log"
+    echo "  Starting: run_year.py $YEAR -> $LOGFILE"
+    nohup $PYTHON run_year.py "$YEAR" > "$LOGFILE" 2>&1 &
+    sleep 3  # Stagger launches
 done
 
-# Special case: 2002 BitChute has a dedicated script with separate credentials
-echo "  Starting: run_bitchute_2002.py -> $LOG_DIR/bitchute_2002_dedicated.log"
-nohup $PYTHON run_bitchute_2002.py > "$LOG_DIR/bitchute_2002_dedicated.log" 2>&1 &
+# 2004 — only if playlist URL is configured
+if grep -q "YOUTUBE_PLAYLIST_URL_2004=http" "$BACKEND/.env" 2>/dev/null; then
+    LOGFILE="$LOG_DIR/year_2004.log"
+    echo "  Starting: run_year.py 2004 -> $LOGFILE"
+    nohup $PYTHON run_year.py 2004 > "$LOGFILE" 2>&1 &
+else
+    echo "  Skipping 2004: No playlist URL configured yet"
+fi
 
 echo ""
 echo "============================================"
 echo " PHASE 2: Cloud-to-Cloud Transfers"
 echo "============================================"
 
-# pCloud -> Bilibili watcher (Darius 2020 videos)
-echo "  Starting: pCloud -> Bilibili watcher"
+# pCloud -> Bilibili watcher (Darius 2020 — 72 videos found)
+echo "  Starting: pCloud -> Bilibili watcher (72 videos)"
 nohup $PYTHON watcher_pcloud_to_bilibili.py > "$LOG_DIR/watcher_pcloud_bilibili.log" 2>&1 &
 
-# Internxt -> Icedrive watcher (Eniola 2021 videos)
+# Internxt -> Icedrive watcher (Eniola 2021)
 echo "  Starting: Internxt -> Icedrive watcher"
 nohup $PYTHON watcher_internxt_to_icedrive.py > "$LOG_DIR/watcher_internxt_icedrive.log" 2>&1 &
 
@@ -95,16 +106,25 @@ echo "============================================"
 echo " ALL TRANSFERS LAUNCHED!"
 echo "============================================"
 echo ""
+echo "The flow:"
+echo "  1999: YouTube -> BitChute + Dailymotion"
+echo "  2000: YouTube -> Rumble + Bilibili"
+echo "  2001: YouTube -> Odysee + Internet Archive"
+echo "  2002: YouTube -> BitChute + pCloud"
+echo "  2003: YouTube -> Rumble + Dailymotion"
+echo "  2020: pCloud -> Bilibili (72 videos)"
+echo "  2021: Internxt -> Icedrive"
+echo ""
 echo "Monitor progress:"
-echo "  - Telegram bot: send 'status' to your bot"
-echo "  - Logs: tail -f $LOG_DIR/<platform>_<year>.log"
+echo "  - Telegram: send 'status' to your bot"
+echo "  - Logs: tail -f $LOG_DIR/year_<YEAR>.log"
 echo "  - All processes: ps aux | grep python"
 echo ""
 echo "To stop everything:"
-echo "  pkill -f 'run_rumble\|run_bitchute\|run_dailymotion\|run_odysee\|watcher_\|telegram_bot'"
+echo "  pkill -f 'run_year\|watcher_\|telegram_bot'"
 echo ""
 
 # List running processes
 sleep 3
 echo "Running processes:"
-ps aux | grep -E "(run_|watcher_|telegram_bot)" | grep -v grep | awk '{print "  PID " $2 ": " $11 " " $12}'
+ps aux | grep -E "(run_year|watcher_|telegram_bot)" | grep -v grep | awk '{print "  PID " $2 ": " $11 " " $12}'

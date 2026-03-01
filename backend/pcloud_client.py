@@ -256,6 +256,55 @@ def create_folder(folder_name, parent_path="/", parent_id=None):
         return None
 
 
+def upload_file(local_path, dest_folder="/", dest_folder_id=None):
+    """
+    Upload a file to pCloud.
+    Returns file metadata dict on success, None on failure.
+    """
+    token = authenticate()
+    if not token:
+        return None
+
+    if not os.path.exists(local_path):
+        print(f"[pCloud] File not found: {local_path}")
+        return None
+
+    file_name = os.path.basename(local_path)
+    file_size = os.path.getsize(local_path)
+    print(f"[pCloud] Uploading: {file_name} ({file_size / 1024 / 1024:.1f} MB)")
+
+    params = {'auth': token}
+    if dest_folder_id is not None:
+        params['folderid'] = dest_folder_id
+    else:
+        params['path'] = dest_folder
+
+    try:
+        with open(local_path, 'rb') as f:
+            r = requests.post(
+                f'{API_BASE}/uploadfile',
+                params=params,
+                files={'file': (file_name, f)},
+                timeout=7200,
+            )
+
+        data = r.json()
+        if data.get('result') != 0:
+            print(f"[pCloud] Upload error: {data.get('error', 'unknown')}")
+            return None
+
+        metadata = data.get('metadata', [])
+        if metadata:
+            file_meta = metadata[0] if isinstance(metadata, list) else metadata
+            print(f"[pCloud] Upload SUCCESS: {file_name}")
+            return file_meta
+        return True
+
+    except Exception as e:
+        print(f"[pCloud] Upload error: {e}")
+        return None
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == '--test':

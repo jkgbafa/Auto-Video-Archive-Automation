@@ -45,8 +45,8 @@ PLATFORM_COLUMNS = {
     "Internxt":    {"status_col": 15, "link_col": 16},
     "Icedrive":    {"status_col": 17, "link_col": 18},
     "Bilibili":    {"status_col": 19, "link_col": 20},
-    "Koofr":       {"status_col": 21, "link_col": 22},
-    "NicoNico":    {"status_col": 23, "link_col": 24},
+    "Koofr":              {"status_col": 21, "link_col": 22},
+    "InternetArchive":    {"status_col": 23, "link_col": 24},
 }
 
 HEADERS = [
@@ -60,7 +60,7 @@ HEADERS = [
     "Icedrive Status", "Icedrive Link",
     "Bilibili Status", "Bilibili Link",
     "Koofr Status", "Koofr Link",
-    "NicoNico Status", "NicoNico Link",
+    "Internet Archive Status", "Internet Archive Link",
 ]
 
 _gc_cache = None
@@ -155,10 +155,9 @@ def notify_new_video(title):
 def notify_upload_success(title, platform, current=0, total=0):
     progress = f" ({current}/{total})" if total > 0 else ""
     icons = {
-        "Rumble": "🟢",
-        "BitChute": "🔴",
-        "Dailymotion": "🔵",
-        "Odysee": "🟣",
+        "Rumble": "🟢", "BitChute": "🔴", "Dailymotion": "🔵",
+        "Odysee": "🟣", "Bilibili": "🔷", "InternetArchive": "🏛",
+        "pCloud": "☁️", "Icedrive": "❄️",
     }
     icon = icons.get(platform, "⬜")
     msg = f"{icon} <b>{platform}{progress}</b>\n✅ {title}"
