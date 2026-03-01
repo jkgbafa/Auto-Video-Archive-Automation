@@ -34,7 +34,8 @@ import signal
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from pcloud_client import authenticate as pcloud_auth, list_folder as pcloud_list, list_videos as pcloud_list_videos, download_file as pcloud_download
-from notifier import send_telegram_message
+from bilibili_client import upload_to_bilibili, has_credentials as bilibili_has_creds
+from notifier import send_telegram_message, update_sheet_platform
 from config import DOWNLOAD_DIR
 
 # ---------------------------------------------------------------------------
@@ -50,8 +51,8 @@ PCLOUD_REVIVAL_FOLDER_ID = 30553303280  # "2020 Messages/REVIVAL SERVICES" folde
 ARCHIVE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'transfer_pcloud_bilibili_{YEAR}.json')
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'watcher_state_pcloud_{YEAR}.json')
 
-# Is Bilibili upload available?
-BILIBILI_ENABLED = False  # Set to True when Bilibili credentials are ready
+# Auto-detect if Bilibili upload is available (cookies configured)
+BILIBILI_ENABLED = bilibili_has_creds()
 
 _shutdown = False
 
@@ -121,14 +122,17 @@ def transfer_file(file_info, archive):
         print(f"[Transfer] Downloaded: {actual_size / 1024 / 1024:.1f} MB")
 
         # Step 2: Upload to Bilibili (when enabled)
+        title = os.path.splitext(file_name)[0]  # Use filename as title
         if BILIBILI_ENABLED:
             print(f"[Transfer] Step 2: Uploading to Bilibili...")
-            # TODO: Integrate bilibili uploader when credentials are ready
-            # success = upload_to_bilibili(local_path, title, description)
-            print(f"[Transfer] Bilibili upload not yet implemented")
-            success = False
+            success = upload_to_bilibili(local_path, title, description=title)
+            if success:
+                update_sheet_platform("", title, "Bilibili", "Uploaded", "", year=YEAR)
+            else:
+                update_sheet_platform("", title, "Bilibili", "Failed", "", year=YEAR)
         else:
             print(f"[Transfer] Step 2: Bilibili upload DISABLED — monitoring only")
+            print(f"  To enable: add SESSDATA + bili_jct cookies to .env or bilibili_cookies.json")
             success = True  # Mark as "seen" in monitor mode
 
         # Step 3: Update archive
@@ -163,7 +167,8 @@ def transfer_file(file_info, archive):
         return False
 
     finally:
-        if os.path.exists(local_path):
+        # Only clean up if upload succeeded or we're in monitor mode
+        if os.path.exists(local_path) and (not BILIBILI_ENABLED or success):
             try:
                 os.remove(local_path)
             except Exception:

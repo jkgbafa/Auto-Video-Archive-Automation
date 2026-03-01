@@ -4,6 +4,7 @@ Downloads each video via yt-dlp, uploads to Odysee via TUS protocol.
 
 Usage:
   python run_odysee.py 2000
+  python run_odysee.py 2001
   python run_odysee.py 2003
 """
 import os
@@ -14,7 +15,7 @@ import re
 from pytubefix import Playlist
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from config import YOUTUBE_PLAYLIST_URL_2000, YOUTUBE_PLAYLIST_URL_2003
+from config import YOUTUBE_PLAYLIST_URL_2000, YOUTUBE_PLAYLIST_URL_2001, YOUTUBE_PLAYLIST_URL_2003
 from downloader import download_video
 from uploader_odysee import upload_to_odysee
 from notifier import send_telegram_message, update_sheet_platform, notify_upload_success, notify_upload_failed
@@ -24,9 +25,15 @@ YEAR = "2000"
 YEAR_CONFIG = {
     "2000": {
         "playlist_env": "YOUTUBE_PLAYLIST_URL_2000",
+        "channel_name": None,  # Use default channel
+    },
+    "2001": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_2001",
+        "channel_name": "2001archivedhmm2",
     },
     "2003": {
         "playlist_env": "YOUTUBE_PLAYLIST_URL_2003",
+        "channel_name": None,
     },
 }
 
@@ -115,7 +122,8 @@ def main():
         description = media_info.get('description', '')
 
         # --- Upload to Odysee ---
-        claim_id = upload_to_odysee(video_path, actual_title, description)
+        channel_name = config.get('channel_name')
+        claim_id = upload_to_odysee(video_path, actual_title, description, channel_name=channel_name)
 
         if claim_id:
             uploaded_count += 1
