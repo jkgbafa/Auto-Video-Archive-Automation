@@ -125,14 +125,23 @@ def transfer_file(file_info, archive):
         title = os.path.splitext(file_name)[0]  # Use filename as title
         if BILIBILI_ENABLED:
             print(f"[Transfer] Step 2: Uploading to Bilibili...")
-            success = upload_to_bilibili(local_path, title, description=title)
+            result = upload_to_bilibili(local_path, title, description=title)
+            if result == "RATE_LIMITED":
+                print(f"[Transfer] Daily upload limit reached, will retry tomorrow")
+                send_telegram_message(
+                    f"⏸ <b>Bilibili Daily Limit</b>\n"
+                    f"Reached {3}/day limit. Resuming tomorrow.\n"
+                    f"Queued: {file_name}"
+                )
+                return False  # Don't mark as done, retry next cycle
+            success = bool(result)
             if success:
                 update_sheet_platform("", title, "Bilibili", "Uploaded", "", year=YEAR)
             else:
                 update_sheet_platform("", title, "Bilibili", "Failed", "", year=YEAR)
         else:
             print(f"[Transfer] Step 2: Bilibili upload DISABLED — monitoring only")
-            print(f"  To enable: add SESSDATA + bili_jct cookies to .env or bilibili_cookies.json")
+            print(f"  To enable: run 'biliup login' or add cookies to bilibili_cookies.json")
             success = True  # Mark as "seen" in monitor mode
 
         # Step 3: Update archive
