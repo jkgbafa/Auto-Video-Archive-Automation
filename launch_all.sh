@@ -30,7 +30,10 @@ echo "============================================"
 echo ""
 
 # Kill ALL existing archive processes to avoid duplicates (both projects)
-pkill -f 'run_year\|watcher_pcloud\|watcher_internxt\|telegram_bot' 2>/dev/null || true
+# Note: pkill -f uses extended regex, so use | not \|
+pkill -f 'run_year|watcher_pcloud|watcher_internxt|telegram_bot' 2>/dev/null || true
+# Also kill anything from the old legacy project
+pkill -f 'archive_worker' 2>/dev/null || true
 sleep 2
 echo "Cleared old processes"
 echo ""
@@ -126,7 +129,7 @@ echo "  - Logs: tail -f $LOG_DIR/year_<YEAR>.log"
 echo "  - All processes: ps aux | grep python"
 echo ""
 echo "To stop everything:"
-echo "  pkill -f 'run_year\|watcher_\|telegram_bot'"
+echo "  pkill -f 'run_year|watcher_|telegram_bot'"
 echo ""
 
 # List running processes
