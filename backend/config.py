@@ -42,8 +42,10 @@ ODYSEE_EMAIL = os.getenv("ODYSEE_EMAIL", "")
 ODYSEE_PASSWORD = os.getenv("ODYSEE_PASSWORD", "")
 
 # Year-specific playlist URLs (for multi-year pipelines)
+YOUTUBE_PLAYLIST_URL_1999 = os.getenv("YOUTUBE_PLAYLIST_URL_1999", "")
 YOUTUBE_PLAYLIST_URL_2000 = os.getenv("YOUTUBE_PLAYLIST_URL_2000", "")
 YOUTUBE_PLAYLIST_URL_2001 = os.getenv("YOUTUBE_PLAYLIST_URL_2001", "")
+YOUTUBE_PLAYLIST_URL_2002 = os.getenv("YOUTUBE_PLAYLIST_URL_2002", "")
 YOUTUBE_PLAYLIST_URL_2003 = os.getenv("YOUTUBE_PLAYLIST_URL_2003", "")
 
 # ---- Phase 2: Archive Backup Platforms ----
