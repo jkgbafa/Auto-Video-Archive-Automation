@@ -2,8 +2,9 @@
 Icedrive uploader via WebDAV protocol.
 
 Icedrive WebDAV endpoint: https://webdav.icedrive.io/
-Auth: email/password (same as Icedrive account login)
-Requires paid plan (Pro or higher) for WebDAV access.
+Auth: email + Access Key (NOT regular password)
+      Access Key is generated from: icedrive.net > Avatar > 2FA & Access > WebDAV
+Requires paid plan for WebDAV access.
 
 Used as the DESTINATION for Eniola's 2021 uploads (Internxt -> Icedrive).
 """
@@ -12,7 +13,7 @@ import os
 import time
 import requests
 from requests.auth import HTTPBasicAuth
-from config import ICEDRIVE_EMAIL, ICEDRIVE_PASSWORD, ICEDRIVE_WEBDAV_URL
+from config import ICEDRIVE_EMAIL, ICEDRIVE_PASSWORD, ICEDRIVE_WEBDAV_URL, ICEDRIVE_ACCESS_KEY
 
 MAX_RETRIES = 3
 RETRY_DELAY = 30
@@ -20,11 +21,13 @@ CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB chunks for progress reporting
 
 
 def _get_auth():
-    """Get HTTPBasicAuth for WebDAV."""
-    if not ICEDRIVE_EMAIL or not ICEDRIVE_PASSWORD:
-        print("[Icedrive] No credentials configured")
+    """Get HTTPBasicAuth for WebDAV. Uses Access Key if available, falls back to password."""
+    webdav_password = ICEDRIVE_ACCESS_KEY or ICEDRIVE_PASSWORD
+    if not ICEDRIVE_EMAIL or not webdav_password:
+        print("[Icedrive] No credentials configured. WebDAV needs an Access Key.")
+        print("  Generate one at: icedrive.net > Avatar > 2FA & Access > WebDAV")
         return None
-    return HTTPBasicAuth(ICEDRIVE_EMAIL, ICEDRIVE_PASSWORD)
+    return HTTPBasicAuth(ICEDRIVE_EMAIL, webdav_password)
 
 
 def test_connection():

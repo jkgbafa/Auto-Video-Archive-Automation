@@ -59,6 +59,7 @@ INTERNXT_PASSWORD = os.getenv("INTERNXT_PASSWORD", "")
 ICEDRIVE_EMAIL = os.getenv("ICEDRIVE_EMAIL", "")
 ICEDRIVE_PASSWORD = os.getenv("ICEDRIVE_PASSWORD", "")
 ICEDRIVE_WEBDAV_URL = os.getenv("ICEDRIVE_WEBDAV_URL", "https://webdav.icedrive.io/")
+ICEDRIVE_ACCESS_KEY = os.getenv("ICEDRIVE_ACCESS_KEY", "")  # WebDAV uses Access Key, not password
 
 # Koofr
 KOOFR_EMAIL = os.getenv("KOOFR_EMAIL", "")
