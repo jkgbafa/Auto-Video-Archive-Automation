@@ -29,8 +29,8 @@ echo " Auto-Video-Archive — FULL LAUNCH"
 echo "============================================"
 echo ""
 
-# Kill any existing processes from previous runs to avoid duplicates
-pkill -f 'run_year\|watcher_pcloud\|watcher_internxt' 2>/dev/null || true
+# Kill ALL existing archive processes to avoid duplicates (both projects)
+pkill -f 'run_year\|watcher_pcloud\|watcher_internxt\|telegram_bot' 2>/dev/null || true
 sleep 2
 echo "Cleared old processes"
 echo ""

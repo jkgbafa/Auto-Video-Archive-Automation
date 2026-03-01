@@ -8,10 +8,14 @@ import requests
 from config import DOWNLOAD_DIR
 
 # ---------------------------------------------------------------------------
-# Uses Python 3.13 venv with yt-dlp 2026 + EJS solver for SABR bypass.
-# The system Python 3.9 yt-dlp can't handle YouTube's SABR streaming.
+# yt-dlp Python: prefer dedicated venv if it exists, otherwise use the
+# project venv (which has yt-dlp installed via pip).
 # ---------------------------------------------------------------------------
-YTDLP_VENV_PYTHON = os.path.expanduser("~/.local/share/yt-dlp-env/bin/python")
+_YTDLP_VENV_PYTHON = os.path.expanduser("~/.local/share/yt-dlp-env/bin/python")
+if os.path.isfile(_YTDLP_VENV_PYTHON):
+    YTDLP_VENV_PYTHON = _YTDLP_VENV_PYTHON
+else:
+    YTDLP_VENV_PYTHON = sys.executable  # fallback: project venv python
 FFMPEG_PATH = os.path.expanduser("~/.local/bin/ffmpeg")
 
 # Ensure ffmpeg and local bin are on PATH
@@ -37,10 +41,11 @@ def get_video_info(video_url):
         "--skip-download",
         "--print-json",
         "--no-warnings",
-        "--js-runtimes", "node",
-        "--cookies-from-browser", "chrome",
         video_url,
     ]
+    # Only use node/chrome if available (not on headless VPS)
+    if subprocess.run(["which", "node"], capture_output=True).returncode == 0:
+        cmd[4:4] = ["--js-runtimes", "node"]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60,
@@ -100,14 +105,16 @@ def download_video(video_url, output_prefix=None):
             "--write-info-json",
             "--no-warnings",
             "--ignore-errors",
-            "--js-runtimes", "node",
-            "--cookies-from-browser", "chrome",
             "--merge-output-format", "mp4",
             video_url,
         ]
+        # Only use node JS runtime if available
+        if subprocess.run(["which", "node"], capture_output=True).returncode == 0:
+            cmd.insert(-1, "--js-runtimes")
+            cmd.insert(-1, "node")
 
         env = _get_env()
-        print(f"  [yt-dlp] Running with Python 3.13 venv + EJS solver...")
+        print(f"  [yt-dlp] Running with {YTDLP_VENV_PYTHON}...")
         result = subprocess.run(cmd, capture_output=True, text=True, env=env,
                                 timeout=7200)
 
