@@ -6,6 +6,10 @@ Auth: email + Access Key (NOT regular password)
       Access Key is generated from: icedrive.net > Avatar > 2FA & Access > WebDAV
 Requires paid plan for WebDAV access.
 
+IMPORTANT: Icedrive allows only ONE device session per account.
+All requests must use 'Connection: close' and space out operations
+to avoid 403 "Only one device session per account is allowed" errors.
+
 Used as the DESTINATION for Eniola's 2021 uploads (Internxt -> Icedrive).
 """
 
@@ -18,6 +22,10 @@ from config import ICEDRIVE_EMAIL, ICEDRIVE_PASSWORD, ICEDRIVE_WEBDAV_URL, ICEDR
 MAX_RETRIES = 3
 RETRY_DELAY = 30
 CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB chunks for progress reporting
+SESSION_DELAY = 3  # Seconds between WebDAV requests to avoid session conflicts
+
+# Track last request time for session spacing
+_last_request_time = 0
 
 
 def _get_auth():
@@ -30,6 +38,47 @@ def _get_auth():
     return HTTPBasicAuth(ICEDRIVE_EMAIL, webdav_password)
 
 
+def _webdav_request(method, url, auth, headers=None, timeout=60, **kwargs):
+    """Make a WebDAV request with session management.
+
+    Icedrive only allows one device session at a time, so we:
+    - Always send Connection: close to release sessions
+    - Space out requests by SESSION_DELAY seconds
+    - Retry on 403 (session conflict) after waiting
+    """
+    global _last_request_time
+
+    # Wait if needed to avoid session conflicts
+    elapsed = time.time() - _last_request_time
+    if elapsed < SESSION_DELAY and _last_request_time > 0:
+        time.sleep(SESSION_DELAY - elapsed)
+
+    all_headers = {'Connection': 'close'}
+    if headers:
+        all_headers.update(headers)
+
+    for attempt in range(3):
+        try:
+            r = requests.request(method, url, auth=auth, headers=all_headers,
+                                 timeout=timeout, **kwargs)
+            _last_request_time = time.time()
+
+            if r.status_code == 403 and 'one device session' in r.text.lower():
+                wait = SESSION_DELAY * (attempt + 2)
+                print(f"[Icedrive] Session conflict, waiting {wait}s...")
+                time.sleep(wait)
+                continue
+
+            return r
+        except requests.exceptions.ReadTimeout:
+            if attempt < 2:
+                time.sleep(SESSION_DELAY * (attempt + 1))
+                continue
+            raise
+
+    return r
+
+
 def test_connection():
     """Test WebDAV connection. Returns True if connected."""
     auth = _get_auth()
@@ -37,13 +86,8 @@ def test_connection():
         return False
 
     try:
-        r = requests.request(
-            'PROPFIND',
-            ICEDRIVE_WEBDAV_URL,
-            auth=auth,
-            headers={'Depth': '0'},
-            timeout=30,
-        )
+        r = _webdav_request('PROPFIND', ICEDRIVE_WEBDAV_URL, auth=auth,
+                            headers={'Depth': '0'})
         if r.status_code in (200, 207):
             print("[Icedrive] WebDAV connection OK")
             return True
@@ -68,13 +112,7 @@ def list_folder(remote_path="/"):
         url += '/'
 
     try:
-        r = requests.request(
-            'PROPFIND',
-            url,
-            auth=auth,
-            headers={'Depth': '1'},
-            timeout=30,
-        )
+        r = _webdav_request('PROPFIND', url, auth=auth, headers={'Depth': '1'})
         if r.status_code not in (200, 207):
             print(f"[Icedrive] PROPFIND failed: HTTP {r.status_code}")
             return []
@@ -136,7 +174,7 @@ def create_folder(remote_path):
         url += '/'
 
     try:
-        r = requests.request('MKCOL', url, auth=auth, timeout=30)
+        r = _webdav_request('MKCOL', url, auth=auth)
         if r.status_code in (201, 405):
             # 201 = created, 405 = already exists
             return True
@@ -177,15 +215,14 @@ def upload_file(local_path, remote_path):
 
         try:
             with open(local_path, 'rb') as f:
-                r = requests.put(
-                    url,
-                    data=f,
-                    auth=auth,
+                r = _webdav_request(
+                    'PUT', url, auth=auth,
                     headers={
                         'Content-Type': 'application/octet-stream',
                         'Content-Length': str(file_size),
                     },
                     timeout=14400,  # 4 hours for very large files
+                    data=f,
                 )
 
             if r.status_code in (200, 201, 204):
@@ -195,8 +232,8 @@ def upload_file(local_path, remote_path):
             last_error = f"HTTP {r.status_code}: {r.text[:200]}"
             print(f"{prefix} Upload failed: {last_error}")
 
-            # Don't retry on auth errors
-            if r.status_code in (401, 403):
+            # Don't retry on auth errors (but 403 session conflicts are handled by _webdav_request)
+            if r.status_code == 401:
                 print(f"{prefix} Auth error — check credentials")
                 return False
 
@@ -221,13 +258,8 @@ def file_exists(remote_path):
     url = ICEDRIVE_WEBDAV_URL.rstrip('/') + '/' + remote_path.strip('/')
 
     try:
-        r = requests.request(
-            'PROPFIND',
-            url,
-            auth=auth,
-            headers={'Depth': '0'},
-            timeout=15,
-        )
+        r = _webdav_request('PROPFIND', url, auth=auth, headers={'Depth': '0'},
+                            timeout=15)
         return r.status_code in (200, 207)
     except Exception:
         return False
