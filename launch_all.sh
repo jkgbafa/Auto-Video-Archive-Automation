@@ -17,7 +17,6 @@
 #
 # ============================================================================
 
-set -e
 cd "$(dirname "$0")"
 PROJECT_DIR="$(pwd)"
 BACKEND="$PROJECT_DIR/backend"
@@ -30,7 +29,22 @@ echo " Auto-Video-Archive — FULL LAUNCH"
 echo "============================================"
 echo ""
 
-# Check Python
+# Kill any existing processes from previous runs to avoid duplicates
+pkill -f 'run_year\|watcher_pcloud\|watcher_internxt' 2>/dev/null || true
+sleep 2
+echo "Cleared old processes"
+echo ""
+
+# Activate venv FIRST, then set PYTHON so nohup processes use venv python
+if [ -d "$BACKEND/venv" ]; then
+    source "$BACKEND/venv/bin/activate"
+    echo "Activated venv: $BACKEND/venv"
+elif [ -d "$PROJECT_DIR/venv" ]; then
+    source "$PROJECT_DIR/venv/bin/activate"
+    echo "Activated venv: $PROJECT_DIR/venv"
+fi
+
+# Set PYTHON *after* venv activation so it picks up the venv python
 PYTHON=$(which python3 || which python)
 if [ -z "$PYTHON" ]; then
     echo "ERROR: Python not found!"
@@ -38,17 +52,8 @@ if [ -z "$PYTHON" ]; then
 fi
 echo "Python: $PYTHON"
 
-# Check venv
-if [ -d "$BACKEND/venv" ]; then
-    source "$BACKEND/venv/bin/activate"
-    echo "Activated venv"
-elif [ -d "$PROJECT_DIR/venv" ]; then
-    source "$PROJECT_DIR/venv/bin/activate"
-    echo "Activated venv"
-fi
-
 # Install dependencies if needed
-pip install -q pytubefix yt-dlp gspread python-dotenv requests playwright python-telegram-bot biliup internetarchive 2>/dev/null || true
+pip install -q pytubefix yt-dlp gspread python-dotenv requests playwright biliup internetarchive 2>/dev/null || true
 
 cd "$BACKEND"
 
