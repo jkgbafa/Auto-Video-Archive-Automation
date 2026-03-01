@@ -142,8 +142,9 @@ fi
 echo "[6/6] Launching all transfers..."
 echo ""
 
-# Kill any old python processes from previous runs
-pkill -f 'run_year\|watcher_pcloud\|watcher_internxt\|telegram_bot' 2>/dev/null || true
+# Kill any old python processes from previous runs (extended regex: use | not \|)
+pkill -9 -f 'run_year|watcher_pcloud|watcher_internxt|telegram_bot' 2>/dev/null || true
+pkill -9 -f 'archive_worker' 2>/dev/null || true
 sleep 2
 
 # Launch everything
@@ -159,11 +160,9 @@ sleep 5
 
 YEAR_PROCS=$(ps aux | grep run_year | grep -v grep | wc -l)
 WATCHER_PROCS=$(ps aux | grep watcher_ | grep -v grep | wc -l)
-BOT_PROCS=$(ps aux | grep telegram_bot | grep -v grep | wc -l)
 
 echo "  run_year.py processes: $YEAR_PROCS (expected: 5)"
 echo "  watcher processes:     $WATCHER_PROCS (expected: 2)"
-echo "  telegram bot:          $BOT_PROCS (expected: 1)"
 echo ""
 
 if [ "$YEAR_PROCS" -ge 1 ]; then

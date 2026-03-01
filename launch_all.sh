@@ -31,9 +31,10 @@ echo ""
 
 # Kill ALL existing archive processes to avoid duplicates (both projects)
 # Note: pkill -f uses extended regex, so use | not \|
-pkill -f 'run_year|watcher_pcloud|watcher_internxt|telegram_bot' 2>/dev/null || true
+# Using -9 (SIGKILL) because some processes ignore SIGTERM
+pkill -9 -f 'run_year|watcher_pcloud|watcher_internxt|telegram_bot' 2>/dev/null || true
 # Also kill anything from the old legacy project
-pkill -f 'archive_worker' 2>/dev/null || true
+pkill -9 -f 'archive_worker' 2>/dev/null || true
 sleep 2
 echo "Cleared old processes"
 echo ""
@@ -96,16 +97,8 @@ nohup $PYTHON watcher_pcloud_to_bilibili.py > "$LOG_DIR/watcher_pcloud_bilibili.
 echo "  Starting: Internxt -> Icedrive watcher"
 nohup $PYTHON watcher_internxt_to_icedrive.py > "$LOG_DIR/watcher_internxt_icedrive.log" 2>&1 &
 
-echo ""
-echo "============================================"
-echo " TELEGRAM BOT"
-echo "============================================"
-
-# Start Telegram bot for status monitoring
-echo "  Starting: Telegram bot"
-nohup $PYTHON telegram_bot.py > "$LOG_DIR/telegram_bot.log" 2>&1 &
-
 # Update the logins sheet
+echo ""
 echo "  Updating logins sheet..."
 $PYTHON update_logins_sheet.py 2>/dev/null || echo "  (logins sheet update skipped)"
 
