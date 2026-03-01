@@ -42,16 +42,24 @@ def get_year_status(year_str):
         total = len(records)
         if total == 0:
             return f"📋 Year {year_str}: No videos found yet."
-        
+
         yt_done = sum(1 for r in records if r.get("YouTube Status") == "Uploaded")
+        rm_done = sum(1 for r in records if r.get("Rumble Status") == "Uploaded")
         bc_done = sum(1 for r in records if r.get("Bitchute Status") == "Uploaded")
         dm_done = sum(1 for r in records if r.get("Dailymotion Status") == "Uploaded")
+        od_done = sum(1 for r in records if r.get("Odysee Status") == "Uploaded")
+        rm_fail = sum(1 for r in records if r.get("Rumble Status") == "Failed")
         bc_fail = sum(1 for r in records if r.get("Bitchute Status") == "Failed")
         dm_fail = sum(1 for r in records if r.get("Dailymotion Status") == "Failed")
-        
+        od_fail = sum(1 for r in records if r.get("Odysee Status") == "Failed")
+
         msg = f"📊 <b>Year {year_str} Status</b>\n"
         msg += f"━━━━━━━━━━━━━━━\n"
         msg += f"📺 YouTube: <b>{yt_done}/{total}</b>\n"
+        msg += f"🟢 Rumble: <b>{rm_done}/{total}</b>"
+        if rm_fail > 0:
+            msg += f" ({rm_fail} failed)"
+        msg += f"\n"
         msg += f"🔴 Bitchute: <b>{bc_done}/{total}</b>"
         if bc_fail > 0:
             msg += f" ({bc_fail} failed)"
@@ -60,14 +68,18 @@ def get_year_status(year_str):
         if dm_fail > 0:
             msg += f" ({dm_fail} failed)"
         msg += f"\n"
-        
-        # Calculate overall progress
-        platforms_done = bc_done + dm_done
-        platforms_total = total * 2  # 2 platforms
+        msg += f"🟣 Odysee: <b>{od_done}/{total}</b>"
+        if od_fail > 0:
+            msg += f" ({od_fail} failed)"
+        msg += f"\n"
+
+        # Calculate overall progress (4 platforms)
+        platforms_done = rm_done + bc_done + dm_done + od_done
+        platforms_total = total * 4
         if platforms_total > 0:
             pct = int((platforms_done / platforms_total) * 100)
-            msg += f"\n🏆 Overall: <b>{pct}%</b> complete"
-        
+            msg += f"\n🏆 Overall: <b>{pct}%</b> complete ({platforms_done}/{platforms_total})"
+
         return msg
     except gspread.exceptions.WorksheetNotFound:
         return f"❌ No data for year {year_str} yet."
@@ -80,59 +92,80 @@ def get_overall_status():
         sh = get_sheet()
         worksheets = sh.worksheets()
         year_tabs = [ws for ws in worksheets if ws.title.isdigit() and len(ws.title) == 4]
-        
+
         if not year_tabs:
             return "📋 No year tabs found yet."
-        
+
         msg = "📊 <b>Archive Overview</b>\n━━━━━━━━━━━━━━━\n"
         total_all = 0
+        rm_all = 0
         bc_all = 0
         dm_all = 0
-        
+        od_all = 0
+
         for ws in sorted(year_tabs, key=lambda w: w.title):
             records = ws.get_all_records()
             total = len(records)
             if total == 0:
                 continue
             total_all += total
+            rm = sum(1 for r in records if r.get("Rumble Status") == "Uploaded")
             bc = sum(1 for r in records if r.get("Bitchute Status") == "Uploaded")
             dm = sum(1 for r in records if r.get("Dailymotion Status") == "Uploaded")
+            od = sum(1 for r in records if r.get("Odysee Status") == "Uploaded")
+            rm_all += rm
             bc_all += bc
             dm_all += dm
-            msg += f"\n<b>{ws.title}</b>: 📺{total} | 🔴BC {bc}/{total} | 🔵DM {dm}/{total}"
-        
+            od_all += od
+            msg += f"\n<b>{ws.title}</b>: 📺{total} | 🟢RM {rm} | 🔴BC {bc} | 🔵DM {dm} | 🟣OD {od}"
+
         msg += f"\n\n━━━━━━━━━━━━━━━"
         msg += f"\n<b>TOTALS</b>: {total_all} videos"
+        msg += f"\n🟢 Rumble: {rm_all}/{total_all}"
         msg += f"\n🔴 Bitchute: {bc_all}/{total_all}"
         msg += f"\n🔵 Dailymotion: {dm_all}/{total_all}"
-        
+        msg += f"\n🟣 Odysee: {od_all}/{total_all}"
+
+        done = rm_all + bc_all + dm_all + od_all
+        goal = total_all * 4
+        if goal > 0:
+            msg += f"\n\n🏆 Overall: <b>{int(done/goal*100)}%</b> ({done}/{goal})"
+
         return msg
     except Exception as e:
         return f"⚠️ Error: {str(e)[:100]}"
 
 def get_completed_list(year_str=None, platform=None):
     """Get list of completed videos."""
+    PLATFORM_STATUS_KEYS = {
+        "rumble": "Rumble Status",
+        "bitchute": "Bitchute Status",
+        "dailymotion": "Dailymotion Status",
+        "odysee": "Odysee Status",
+    }
     try:
         sh = get_sheet()
         if year_str:
             tabs = [sh.worksheet(year_str)]
         else:
             tabs = [ws for ws in sh.worksheets() if ws.title.isdigit() and len(ws.title) == 4]
-        
+
         completed = []
         for ws in tabs:
             records = ws.get_all_records()
             for r in records:
-                if platform == "bitchute" and r.get("Bitchute Status") == "Uploaded":
-                    completed.append(f"✅ {r.get('Name', '?')}")
-                elif platform == "dailymotion" and r.get("Dailymotion Status") == "Uploaded":
-                    completed.append(f"✅ {r.get('Name', '?')}")
-                elif not platform and (r.get("Bitchute Status") == "Uploaded" or r.get("Dailymotion Status") == "Uploaded"):
-                    completed.append(f"✅ {r.get('Name', '?')}")
-        
+                name = r.get('Name', '?')
+                if platform and platform in PLATFORM_STATUS_KEYS:
+                    if r.get(PLATFORM_STATUS_KEYS[platform]) == "Uploaded":
+                        completed.append(f"✅ {name}")
+                elif not platform:
+                    # Show if uploaded to ANY platform
+                    if any(r.get(key) == "Uploaded" for key in PLATFORM_STATUS_KEYS.values()):
+                        completed.append(f"✅ {name}")
+
         if not completed:
             return "No completed uploads found."
-        
+
         # Limit to last 20 to avoid huge messages
         if len(completed) > 20:
             msg = f"📋 <b>Last 20 of {len(completed)} completed:</b>\n"
@@ -158,18 +191,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = get_overall_status()
     elif any(w in text for w in ['list', 'done', 'completed', 'finished', 'which']):
         platform = None
-        if 'bitchute' in text or 'bc' in text:
+        if 'rumble' in text:
+            platform = "rumble"
+        elif 'bitchute' in text or 'bc' in text:
             platform = "bitchute"
         elif 'dailymotion' in text or 'dm' in text:
             platform = "dailymotion"
+        elif 'odysee' in text or 'lbry' in text:
+            platform = "odysee"
         year = year_match.group(1) if year_match else None
         response = get_completed_list(year, platform)
-    elif 'bitchute' in text:
-        if year_match:
-            response = get_year_status(year_match.group(1))
-        else:
-            response = get_overall_status()
-    elif 'dailymotion' in text or 'daily motion' in text:
+    elif any(p in text for p in ['rumble', 'bitchute', 'dailymotion', 'daily motion', 'odysee', 'lbry']):
         if year_match:
             response = get_year_status(year_match.group(1))
         else:

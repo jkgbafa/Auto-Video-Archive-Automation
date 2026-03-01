@@ -15,7 +15,9 @@ import re
 from pytubefix import Playlist
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from config import YOUTUBE_PLAYLIST_URL_2000, YOUTUBE_PLAYLIST_URL_2003
+from config import (YOUTUBE_PLAYLIST_URL_1999, YOUTUBE_PLAYLIST_URL_2000,
+                     YOUTUBE_PLAYLIST_URL_2001, YOUTUBE_PLAYLIST_URL_2002,
+                     YOUTUBE_PLAYLIST_URL_2003)
 from downloader import download_video
 from uploader_dailymotion import upload_to_dailymotion
 from notifier import send_telegram_message, update_google_sheet, update_sheet_platform, notify_upload_success, notify_upload_failed
@@ -23,8 +25,17 @@ from notifier import send_telegram_message, update_google_sheet, update_sheet_pl
 YEAR = "2000"
 
 YEAR_CONFIG = {
+    "1999": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_1999",
+    },
     "2000": {
         "playlist_env": "YOUTUBE_PLAYLIST_URL_2000",
+    },
+    "2001": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_2001",
+    },
+    "2002": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_2002",
     },
     "2003": {
         "playlist_env": "YOUTUBE_PLAYLIST_URL_2003",

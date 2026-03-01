@@ -35,10 +35,18 @@ def send_telegram_message(message):
 #   I: Dailymotion Status, J: Dailymotion Link,
 #   K: Odysee Status, L: Odysee Link
 PLATFORM_COLUMNS = {
+    # Phase 1: YouTube -> platforms
     "Rumble":      {"status_col": 5, "link_col": 6},
     "BitChute":    {"status_col": 7, "link_col": 8},
     "Dailymotion": {"status_col": 9, "link_col": 10},
     "Odysee":      {"status_col": 11, "link_col": 12},
+    # Phase 2: Archive backup platforms
+    "pCloud":      {"status_col": 13, "link_col": 14},
+    "Internxt":    {"status_col": 15, "link_col": 16},
+    "Icedrive":    {"status_col": 17, "link_col": 18},
+    "Bilibili":    {"status_col": 19, "link_col": 20},
+    "Koofr":              {"status_col": 21, "link_col": 22},
+    "InternetArchive":    {"status_col": 23, "link_col": 24},
 }
 
 HEADERS = [
@@ -46,7 +54,13 @@ HEADERS = [
     "Rumble Status", "Rumble Link",
     "Bitchute Status", "Bitchute Link",
     "Dailymotion Status", "Dailymotion Link",
-    "Odysee Status", "Odysee Link"
+    "Odysee Status", "Odysee Link",
+    "pCloud Status", "pCloud Link",
+    "Internxt Status", "Internxt Link",
+    "Icedrive Status", "Icedrive Link",
+    "Bilibili Status", "Bilibili Link",
+    "Koofr Status", "Koofr Link",
+    "Internet Archive Status", "Internet Archive Link",
 ]
 
 _gc_cache = None
@@ -94,7 +108,7 @@ def update_sheet_platform(video_url, title, platform, status, link="", year="200
         try:
             worksheet = sh.worksheet(year)
         except gspread.exceptions.WorksheetNotFound:
-            worksheet = sh.add_worksheet(title=year, rows=100, cols=15)
+            worksheet = sh.add_worksheet(title=year, rows=200, cols=len(HEADERS))
             worksheet.append_row(HEADERS)
 
         # Find the row by YouTube URL (column D = 4)
@@ -105,7 +119,7 @@ def update_sheet_platform(video_url, title, platform, status, link="", year="200
             # Row doesn't exist — append new row
             all_vals = worksheet.col_values(1)
             number = len(all_vals)  # Next number
-            row = [""] * 12
+            row = [""] * len(HEADERS)  # 24 columns to cover all platforms
             row[0] = number
             row[1] = title
             row[2] = "Uploaded"
@@ -141,10 +155,9 @@ def notify_new_video(title):
 def notify_upload_success(title, platform, current=0, total=0):
     progress = f" ({current}/{total})" if total > 0 else ""
     icons = {
-        "Rumble": "🟢",
-        "BitChute": "🔴",
-        "Dailymotion": "🔵",
-        "Odysee": "🟣",
+        "Rumble": "🟢", "BitChute": "🔴", "Dailymotion": "🔵",
+        "Odysee": "🟣", "Bilibili": "🔷", "InternetArchive": "🏛",
+        "pCloud": "☁️", "Icedrive": "❄️",
     }
     icon = icons.get(platform, "⬜")
     msg = f"{icon} <b>{platform}{progress}</b>\n✅ {title}"

@@ -18,7 +18,9 @@ import re
 import subprocess
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from config import YOUTUBE_PLAYLIST_URL_2000, YOUTUBE_PLAYLIST_URL_2003, RUMBLE_CHANNEL_NAME
+from config import (YOUTUBE_PLAYLIST_URL_1999, YOUTUBE_PLAYLIST_URL_2000,
+                     YOUTUBE_PLAYLIST_URL_2001, YOUTUBE_PLAYLIST_URL_2002,
+                     YOUTUBE_PLAYLIST_URL_2003, RUMBLE_CHANNEL_NAME)
 from downloader import download_video, YTDLP_VENV_PYTHON
 from uploader_rumble import upload_to_rumble
 from notifier import send_telegram_message, update_google_sheet, update_sheet_platform, notify_upload_success, notify_upload_failed
@@ -28,9 +30,21 @@ YEAR = "2000"
 
 # Map years to playlist URLs and Rumble channel names
 YEAR_CONFIG = {
+    "1999": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_1999",
+        "channel": "1999",
+    },
     "2000": {
         "playlist_env": "YOUTUBE_PLAYLIST_URL_2000",
         "channel": "2000",
+    },
+    "2001": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_2001",
+        "channel": "2001",
+    },
+    "2002": {
+        "playlist_env": "YOUTUBE_PLAYLIST_URL_2002",
+        "channel": "2002",
     },
     "2003": {
         "playlist_env": "YOUTUBE_PLAYLIST_URL_2003",
