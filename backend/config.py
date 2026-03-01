@@ -68,9 +68,7 @@ ICEDRIVE_ACCESS_KEY = os.getenv("ICEDRIVE_ACCESS_KEY", "")  # WebDAV uses Access
 KOOFR_EMAIL = os.getenv("KOOFR_EMAIL", "")
 KOOFR_PASSWORD = os.getenv("KOOFR_PASSWORD", "")
 
-# NicoNico
-NICONICO_EMAIL = os.getenv("NICONICO_EMAIL", "")
-NICONICO_PASSWORD = os.getenv("NICONICO_PASSWORD", "")
+# NicoNico — REMOVED: No upload API, MFA required, geo-blocked from Europe
 
 # Bilibili
 BILIBILI_EMAIL = os.getenv("BILIBILI_EMAIL", "")

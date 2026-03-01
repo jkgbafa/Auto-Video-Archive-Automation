@@ -16,7 +16,7 @@ CREDS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "google_cr
 # All platform logins extracted from WhatsApp chat + .env
 LOGINS = [
     # [Platform, Country, Email, Password, Plan, Status, Notes]
-    ["Rumble", "Canada", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Active", "Phase 1 - 2000/2003 uploads"],
+    ["Rumble", "Canada", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Active", "Phase 1 - all years (1999-2003)"],
     ["BitChute", "UK", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Active", "Phase 1 - API + curl uploads"],
     ["Dailymotion", "France", "dhmmsocialpublishing@gmail.com", "Fu11Pr00f!", "Free", "Active", "Phase 1 - OAuth API"],
     ["Odysee", "USA", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Pending", "Wrong auth token - needs correct account"],
@@ -24,7 +24,7 @@ LOGINS = [
     ["Internxt", "Spain", "ytoffice2023@gmail.com", "SeeMe123!", "5TB Lifetime", "Active", "Phase 2 - Eniola 2021 source"],
     ["Icedrive", "UK", "ytoffice2023@gmail.com", "SeeMe123!", "1TB Lifetime", "Active", "Phase 2 - Eniola 2021 dest (WebDAV)"],
     ["Koofr", "Slovenia", "TBD", "TBD", "1TB", "Not Created", "Phase 2 - Darius 2022 source"],
-    ["NicoNico", "Japan", "TBD", "TBD", "Free", "Not Created", "Phase 2 - Darius 2022 dest"],
+    ["NicoNico", "Japan", "—", "—", "—", "DROPPED", "No upload API, MFA required, geo-blocked from EU"],
     ["Bilibili", "China", "TBD", "TBD", "Free", "On Hold", "Phase 2 - Darius 2020 dest, needs UK phone"],
     ["YouTube", "USA", "ytoffice2023@gmail.com", "SeeMe123!", "Free", "Active", "Source platform (archiving FROM)"],
     ["Telegram Bot", "—", "Bot Token: 8316483220:AAF...", "Chat ID: 816709817", "—", "Active", "Notifications"],

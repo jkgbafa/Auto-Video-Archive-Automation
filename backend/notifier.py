@@ -108,7 +108,7 @@ def update_sheet_platform(video_url, title, platform, status, link="", year="200
         try:
             worksheet = sh.worksheet(year)
         except gspread.exceptions.WorksheetNotFound:
-            worksheet = sh.add_worksheet(title=year, rows=100, cols=15)
+            worksheet = sh.add_worksheet(title=year, rows=200, cols=len(HEADERS))
             worksheet.append_row(HEADERS)
 
         # Find the row by YouTube URL (column D = 4)
@@ -119,7 +119,7 @@ def update_sheet_platform(video_url, title, platform, status, link="", year="200
             # Row doesn't exist — append new row
             all_vals = worksheet.col_values(1)
             number = len(all_vals)  # Next number
-            row = [""] * 12
+            row = [""] * len(HEADERS)  # 24 columns to cover all platforms
             row[0] = number
             row[1] = title
             row[2] = "Uploaded"
