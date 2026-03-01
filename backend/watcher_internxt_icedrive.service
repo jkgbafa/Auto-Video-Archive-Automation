@@ -1,0 +1,18 @@
+[Unit]
+Description=Internxt to Icedrive Watcher (2021 Archive)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Auto-Video-Archive-Automation/backend
+ExecStart=/usr/bin/python3 /root/Auto-Video-Archive-Automation/backend/watcher_internxt_to_icedrive.py
+Restart=always
+RestartSec=30
+StandardOutput=append:/var/log/watcher_internxt_icedrive.log
+StandardError=append:/var/log/watcher_internxt_icedrive.log
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

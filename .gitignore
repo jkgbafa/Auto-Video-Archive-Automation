@@ -28,5 +28,11 @@ debug_screenshots/
 # Rate limit state
 dm_ratelimit_state_*.json
 
+# Watcher state & transfer archives (Phase 2)
+watcher_state_*.json
+transfer_*.json
+pcloud_token.json
+internxt_token.json
+
 # Claude
 .claude/

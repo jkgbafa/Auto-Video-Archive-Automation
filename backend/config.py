@@ -44,3 +44,30 @@ ODYSEE_PASSWORD = os.getenv("ODYSEE_PASSWORD", "")
 # Year-specific playlist URLs (for multi-year pipelines)
 YOUTUBE_PLAYLIST_URL_2000 = os.getenv("YOUTUBE_PLAYLIST_URL_2000", "")
 YOUTUBE_PLAYLIST_URL_2003 = os.getenv("YOUTUBE_PLAYLIST_URL_2003", "")
+
+# ---- Phase 2: Archive Backup Platforms ----
+
+# pCloud
+PCLOUD_EMAIL = os.getenv("PCLOUD_EMAIL", "")
+PCLOUD_PASSWORD = os.getenv("PCLOUD_PASSWORD", "")
+
+# Internxt
+INTERNXT_EMAIL = os.getenv("INTERNXT_EMAIL", "")
+INTERNXT_PASSWORD = os.getenv("INTERNXT_PASSWORD", "")
+
+# Icedrive
+ICEDRIVE_EMAIL = os.getenv("ICEDRIVE_EMAIL", "")
+ICEDRIVE_PASSWORD = os.getenv("ICEDRIVE_PASSWORD", "")
+ICEDRIVE_WEBDAV_URL = os.getenv("ICEDRIVE_WEBDAV_URL", "https://webdav.icedrive.io/")
+
+# Koofr
+KOOFR_EMAIL = os.getenv("KOOFR_EMAIL", "")
+KOOFR_PASSWORD = os.getenv("KOOFR_PASSWORD", "")
+
+# NicoNico
+NICONICO_EMAIL = os.getenv("NICONICO_EMAIL", "")
+NICONICO_PASSWORD = os.getenv("NICONICO_PASSWORD", "")
+
+# Bilibili
+BILIBILI_EMAIL = os.getenv("BILIBILI_EMAIL", "")
+BILIBILI_PASSWORD = os.getenv("BILIBILI_PASSWORD", "")

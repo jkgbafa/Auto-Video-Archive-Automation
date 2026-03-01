@@ -1,0 +1,18 @@
+[Unit]
+Description=pCloud to Bilibili Watcher (2020 Archive)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Auto-Video-Archive-Automation/backend
+ExecStart=/usr/bin/python3 /root/Auto-Video-Archive-Automation/backend/watcher_pcloud_to_bilibili.py
+Restart=always
+RestartSec=30
+StandardOutput=append:/var/log/watcher_pcloud_bilibili.log
+StandardError=append:/var/log/watcher_pcloud_bilibili.log
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
