@@ -1,185 +1,181 @@
 """
-Internxt API client — list and download files.
+Internxt client — uses the official Internxt CLI for file operations.
 
-Internxt uses end-to-end encryption, which makes API access more complex
-than standard cloud storage. Their web app uses a REST API with JWT auth.
+Internxt uses end-to-end encryption with OPAQUE protocol for auth,
+making direct API calls impractical. The official CLI handles all
+encryption/decryption transparently.
 
-Auth flow:
-  1. POST /api/access with email + password -> token + user info
-  2. Use Bearer token for subsequent requests
+Requirements:
+  npm install -g @internxt/cli
+  npx internxt login-legacy --email EMAIL --password PASS
 
 Used as the SOURCE platform for Eniola's 2021 uploads.
 Automation monitors Internxt for new files and transfers to Icedrive.
+
+CLI Commands used:
+  internxt login-legacy  — authenticate with email/password
+  internxt list          — list folder contents
+  internxt download-file — download and decrypt a file
+  internxt config        — show current user info
 """
 
 import os
 import json
 import time
-import hashlib
-import requests
-from config import INTERNXT_EMAIL, INTERNXT_PASSWORD
+import subprocess
+from config import INTERNXT_EMAIL, INTERNXT_PASSWORD, DOWNLOAD_DIR
 
-API_BASE = "https://drive.internxt.com"
-TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'internxt_token.json')
-
-_auth_cache = {'token': None, 'user': None, 'expires': 0}
+# Check if logged in by running `internxt config`
+_logged_in = None
 
 
-def _save_token(token, user_data=None):
-    """Save auth token to disk."""
-    with open(TOKEN_FILE, 'w') as f:
-        json.dump({
-            'token': token,
-            'user': user_data,
-            'saved_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-        }, f, indent=2)
-
-
-def _load_token():
-    """Load saved auth token."""
-    if not os.path.exists(TOKEN_FILE):
-        return None, None
+def _run_cli(args, timeout=120):
+    """Run an Internxt CLI command and return (success, stdout, stderr)."""
+    cmd = ['npx', 'internxt'] + args
     try:
-        with open(TOKEN_FILE) as f:
-            data = json.load(f)
-        return data.get('token'), data.get('user')
-    except Exception:
-        return None, None
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        return result.returncode == 0, result.stdout.strip(), result.stderr.strip()
+    except subprocess.TimeoutExpired:
+        print(f"[Internxt] CLI timeout ({timeout}s): {' '.join(args)}")
+        return False, '', 'timeout'
+    except FileNotFoundError:
+        print("[Internxt] CLI not found. Install with: npm install -g @internxt/cli")
+        return False, '', 'not found'
+    except Exception as e:
+        print(f"[Internxt] CLI error: {e}")
+        return False, '', str(e)
 
 
-def authenticate(email=None, password=None):
+def is_logged_in():
+    """Check if we're currently logged into Internxt CLI."""
+    global _logged_in
+    if _logged_in is not None:
+        return _logged_in
+
+    ok, stdout, _ = _run_cli(['config'], timeout=15)
+    if ok and 'email' in stdout.lower():
+        _logged_in = True
+        print(f"[Internxt] CLI logged in")
+        return True
+    _logged_in = False
+    return False
+
+
+def login(email=None, password=None):
     """
-    Authenticate with Internxt.
-    Returns (token, user_data) or (None, None).
+    Login to Internxt via CLI.
+    Uses login-legacy (email + password) method.
+    Returns True on success.
     """
-    now = time.time()
-    if _auth_cache['token'] and _auth_cache['expires'] > now:
-        return _auth_cache['token'], _auth_cache['user']
-
-    # Try saved token
-    saved_token, saved_user = _load_token()
-    if saved_token:
-        # Verify token is still valid
-        try:
-            r = requests.get(f'{API_BASE}/api/user', headers={
-                'Authorization': f'Bearer {saved_token}',
-            }, timeout=15)
-            if r.status_code == 200:
-                _auth_cache['token'] = saved_token
-                _auth_cache['user'] = saved_user
-                _auth_cache['expires'] = now + 3600
-                print("[Internxt] Using saved token")
-                return saved_token, saved_user
-        except Exception:
-            pass
-
-    # Fresh login
+    global _logged_in
     email = email or INTERNXT_EMAIL
     password = password or INTERNXT_PASSWORD
+
     if not email or not password:
         print("[Internxt] No credentials configured")
-        return None, None
+        return False
 
-    try:
-        # Internxt uses SHA-256 hashed password for some endpoints
-        # But the /api/access endpoint accepts plain password
-        r = requests.post(f'{API_BASE}/api/access', json={
-            'email': email,
-            'password': password,
-        }, timeout=30)
+    if is_logged_in():
+        return True
 
-        if r.status_code != 200:
-            print(f"[Internxt] Auth failed: HTTP {r.status_code} - {r.text[:200]}")
-            return None, None
+    print(f"[Internxt] Logging in as {email}...")
+    ok, stdout, stderr = _run_cli([
+        'login-legacy',
+        '--email', email,
+        '--password', password,
+    ], timeout=60)
 
-        data = r.json()
-        token = data.get('token')
-        user = data.get('user', data)
+    if ok:
+        _logged_in = True
+        print(f"[Internxt] Login successful")
+        return True
 
-        if not token:
-            # Try alternative auth endpoint
-            r = requests.post(f'{API_BASE}/api/login', json={
-                'email': email,
-                'password': password,
-            }, timeout=30)
-            if r.status_code == 200:
-                data = r.json()
-                token = data.get('token')
-                user = data.get('user', data)
-
-        if not token:
-            print(f"[Internxt] No token in response: {str(data)[:200]}")
-            return None, None
-
-        _save_token(token, user)
-        _auth_cache['token'] = token
-        _auth_cache['user'] = user
-        _auth_cache['expires'] = now + 3600
-        print(f"[Internxt] Authenticated as {email}")
-        return token, user
-
-    except Exception as e:
-        print(f"[Internxt] Auth error: {e}")
-        return None, None
+    print(f"[Internxt] Login failed: {stderr[:200]}")
+    _logged_in = False
+    return False
 
 
 def list_folder(folder_id=None):
     """
     List contents of an Internxt folder.
-    If folder_id is None, lists the root folder.
-    Returns list of file/folder dicts.
+    Returns list of dicts with name, is_folder, id, size info.
     """
-    token, user = authenticate()
-    if not token:
+    if not login():
         return []
 
-    # Get root folder ID from user data if needed
-    if folder_id is None:
-        folder_id = user.get('root_folder_id') if user else None
-        if not folder_id:
-            print("[Internxt] Cannot determine root folder ID")
-            return []
+    args = ['list']
+    if folder_id:
+        args.extend(['--id', str(folder_id)])
 
+    ok, stdout, stderr = _run_cli(args, timeout=60)
+    if not ok:
+        print(f"[Internxt] list failed: {stderr[:200]}")
+        return []
+
+    # Parse CLI output (format varies by version)
+    items = []
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line or line.startswith('─') or line.startswith('┌') or line.startswith('└'):
+            continue
+
+        # Try to parse structured output
+        # The CLI outputs a table with: Type | Name | Size | Modified
+        parts = [p.strip() for p in line.split('│') if p.strip()]
+        if len(parts) >= 2:
+            item_type = parts[0].lower() if len(parts) > 0 else ''
+            name = parts[1] if len(parts) > 1 else ''
+            size = parts[2] if len(parts) > 2 else '0'
+
+            if 'folder' in item_type:
+                items.append({
+                    'name': name,
+                    'is_folder': True,
+                    'folder_id': None,  # CLI doesn't always show IDs
+                })
+            elif name and 'type' not in name.lower() and 'name' not in name.lower():
+                items.append({
+                    'name': name,
+                    'is_folder': False,
+                    'file_id': None,
+                    'size': _parse_size(size),
+                })
+
+    # If table parsing didn't work, try line-by-line
+    if not items:
+        for line in stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            # Simple heuristic: folders end with /
+            if line.endswith('/'):
+                items.append({'name': line.rstrip('/'), 'is_folder': True})
+            elif '.' in line:
+                items.append({'name': line, 'is_folder': False, 'size': 0})
+
+    return items
+
+
+def _parse_size(size_str):
+    """Parse human-readable size like '1.5 GB' to bytes."""
     try:
-        r = requests.get(
-            f'{API_BASE}/api/storage/v2/folder/{folder_id}',
-            headers={'Authorization': f'Bearer {token}'},
-            timeout=30,
-        )
-
-        if r.status_code != 200:
-            print(f"[Internxt] list_folder failed: HTTP {r.status_code}")
-            return []
-
-        data = r.json()
-        files = data.get('files', [])
-        children = data.get('children', [])  # subfolders
-
-        items = []
-        for f in files:
-            items.append({
-                'name': f.get('name', '') + ('.' + f.get('type', '') if f.get('type') else ''),
-                'file_id': f.get('fileId') or f.get('id'),
-                'size': f.get('size', 0),
-                'is_folder': False,
-                'created_at': f.get('createdAt', ''),
-                'updated_at': f.get('updatedAt', ''),
-                'bucket': f.get('bucket', ''),
-            })
-
-        for c in children:
-            items.append({
-                'name': c.get('name', ''),
-                'folder_id': c.get('id'),
-                'is_folder': True,
-                'created_at': c.get('createdAt', ''),
-            })
-
-        return items
-
-    except Exception as e:
-        print(f"[Internxt] list_folder error: {e}")
-        return []
+        size_str = size_str.strip().upper()
+        if 'GB' in size_str:
+            return float(size_str.replace('GB', '').strip()) * 1024 ** 3
+        elif 'MB' in size_str:
+            return float(size_str.replace('MB', '').strip()) * 1024 ** 2
+        elif 'KB' in size_str:
+            return float(size_str.replace('KB', '').strip()) * 1024
+        elif 'B' in size_str:
+            return float(size_str.replace('B', '').strip())
+        return float(size_str) if size_str else 0
+    except (ValueError, AttributeError):
+        return 0
 
 
 def list_videos(folder_id=None):
@@ -193,107 +189,93 @@ def list_videos(folder_id=None):
     ]
 
 
-def get_download_link(file_id):
-    """
-    Get a download link for a file.
-    Internxt files are encrypted, so this returns a link to the encrypted file.
-    The client must decrypt after download.
-    """
-    token, _ = authenticate()
-    if not token:
-        return None
-
-    try:
-        r = requests.get(
-            f'{API_BASE}/api/storage/file/{file_id}',
-            headers={'Authorization': f'Bearer {token}'},
-            timeout=30,
-        )
-
-        if r.status_code == 200:
-            return r.json()
-        print(f"[Internxt] get_download_link failed: HTTP {r.status_code}")
-        return None
-
-    except Exception as e:
-        print(f"[Internxt] get_download_link error: {e}")
-        return None
-
-
 def download_file(file_id, dest_path, file_name=None):
     """
-    Download a file from Internxt.
+    Download a file from Internxt using the CLI.
+    The CLI handles decryption automatically.
 
-    Note: Internxt uses encryption. For files uploaded via the web UI,
-    the download endpoint handles decryption server-side when using
-    the correct auth token.
+    Args:
+        file_id: The file ID (from list output) or None if downloading by name
+        dest_path: Local path to save to
+        file_name: Optional filename for logging
 
     Returns local file path on success, or None.
     """
-    token, _ = authenticate()
-    if not token:
+    if not login():
         return None
 
-    try:
-        # Try the direct download endpoint
-        r = requests.get(
-            f'{API_BASE}/api/storage/file/{file_id}/download',
-            headers={'Authorization': f'Bearer {token}'},
-            stream=True,
-            timeout=7200,
-        )
+    dest_dir = os.path.dirname(dest_path) or DOWNLOAD_DIR
+    os.makedirs(dest_dir, exist_ok=True)
 
-        if r.status_code != 200:
-            print(f"[Internxt] Download failed: HTTP {r.status_code}")
-            return None
+    args = ['download-file']
+    if file_id:
+        args.extend(['--id', str(file_id)])
 
-        total = int(r.headers.get('content-length', 0))
-        downloaded = 0
+    args.extend(['--directory', dest_dir])
 
-        with open(dest_path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8 * 1024 * 1024):
-                f.write(chunk)
-                downloaded += len(chunk)
-                if total > 0:
-                    pct = (downloaded / total) * 100
-                    if pct % 10 < (8 * 1024 * 1024 / total * 100):
-                        print(f"  [Internxt] Download: {pct:.0f}%")
+    display_name = file_name or file_id or 'unknown'
+    print(f"[Internxt] Downloading: {display_name}")
 
-        print(f"  [Internxt] Downloaded: {os.path.getsize(dest_path) / 1024 / 1024:.1f} MB")
-        return dest_path
+    ok, stdout, stderr = _run_cli(args, timeout=7200)  # 2 hour timeout for large files
 
-    except Exception as e:
-        print(f"  [Internxt] Download error: {e}")
-        if os.path.exists(dest_path):
-            os.remove(dest_path)
+    if ok:
+        # Check if file appeared in dest_dir
+        if os.path.exists(dest_path) and os.path.getsize(dest_path) > 0:
+            size_mb = os.path.getsize(dest_path) / 1024 / 1024
+            print(f"[Internxt] Downloaded: {size_mb:.1f} MB -> {dest_path}")
+            return dest_path
+
+        # Try to find the downloaded file (CLI uses original filename)
+        if file_name:
+            alt_path = os.path.join(dest_dir, file_name)
+            if os.path.exists(alt_path) and os.path.getsize(alt_path) > 0:
+                size_mb = os.path.getsize(alt_path) / 1024 / 1024
+                print(f"[Internxt] Downloaded: {size_mb:.1f} MB -> {alt_path}")
+                return alt_path
+
+        print(f"[Internxt] Download appeared to succeed but file not found at {dest_path}")
+        print(f"  stdout: {stdout[:200]}")
         return None
+
+    print(f"[Internxt] Download failed: {stderr[:200]}")
+    return None
 
 
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == '--test':
-        token, user = authenticate()
-        if token:
-            print(f"Token: {token[:30]}...")
-            root_id = user.get('root_folder_id') if user else None
-            print(f"Root folder ID: {root_id}")
+        print("Testing Internxt CLI...")
+        if login():
+            ok, stdout, _ = _run_cli(['config'])
+            print(f"Config:\n{stdout}")
+            print()
             items = list_folder()
-            print(f"\nRoot folder ({len(items)} items):")
+            print(f"Root folder ({len(items)} items):")
             for item in items:
                 kind = "DIR" if item.get('is_folder') else "FILE"
+                name = item.get('name', '?')
                 if item.get('is_folder'):
-                    print(f"  [{kind}] {item['name']}/")
+                    print(f"  [{kind}] {name}/")
                 else:
-                    print(f"  [{kind}] {item['name']}  ({item.get('size', 0) / 1024 / 1024:.1f} MB)")
+                    size_mb = item.get('size', 0) / 1024 / 1024
+                    print(f"  [{kind}] {name} ({size_mb:.1f} MB)")
         else:
-            print("Auth failed")
+            print("Login failed")
+
     elif len(sys.argv) > 1 and sys.argv[1] == '--videos':
-        folder_id = sys.argv[2] if len(sys.argv) > 2 else None
-        videos = list_videos(folder_id)
+        videos = list_videos()
         print(f"Videos ({len(videos)}):")
         for v in videos:
-            print(f"  {v['name']}  ({v.get('size', 0) / 1024 / 1024:.1f} MB)")
+            print(f"  {v['name']} ({v.get('size', 0) / 1024 / 1024:.1f} MB)")
+
+    elif len(sys.argv) > 1 and sys.argv[1] == '--login':
+        login()
+
     else:
         print("Usage:")
-        print("  python internxt_client.py --test       # Test auth + list root")
-        print("  python internxt_client.py --videos     # List videos in root")
+        print("  python internxt_client.py --test     # Test CLI + list root")
+        print("  python internxt_client.py --videos   # List video files")
+        print("  python internxt_client.py --login    # Login to CLI")
+        print()
+        print("Prerequisites:")
+        print("  npm install -g @internxt/cli")

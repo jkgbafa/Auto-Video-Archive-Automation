@@ -17,7 +17,7 @@ import requests
 from config import PCLOUD_EMAIL, PCLOUD_PASSWORD
 
 # pCloud EU API (Switzerland-based)
-API_BASE = "https://eapi.pcloud.com"
+API_BASE = "https://api.pcloud.com"
 
 TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pcloud_token.json')
 

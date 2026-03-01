@@ -42,7 +42,10 @@ from config import DOWNLOAD_DIR
 # ---------------------------------------------------------------------------
 POLL_INTERVAL = 300  # 5 minutes
 YEAR = "2020"
-PCLOUD_WATCH_FOLDER = "/"  # Will be updated once we know Darius's folder structure
+# Darius uploaded to: /2020 Messages/Encoded/ (34 videos, ~2.6-19.5 GB each)
+# and /2020 Messages/REVIVAL SERVICES/ (2 videos)
+PCLOUD_WATCH_FOLDER_ID = 30551569266  # "2020 Messages/Encoded" folder
+PCLOUD_REVIVAL_FOLDER_ID = 30553303280  # "2020 Messages/REVIVAL SERVICES" folder
 
 ARCHIVE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'transfer_pcloud_bilibili_{YEAR}.json')
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'watcher_state_pcloud_{YEAR}.json')
@@ -92,7 +95,7 @@ def _save_state(state):
 # ---------------------------------------------------------------------------
 def transfer_file(file_info, archive):
     """Download from pCloud and upload to Bilibili."""
-    file_id = str(file_info.get('fileid', ''))
+    file_id = str(file_info.get('fileid', file_info.get('file_id', '')))
     file_name = file_info.get('name', f'unknown_{file_id}')
     file_size = file_info.get('size', 0)
 
@@ -174,8 +177,16 @@ def check_and_transfer():
     archive = _load_archive()
     known_ids = set(archive.keys())
 
-    # List videos in the watch folder
-    videos = pcloud_list_videos(PCLOUD_WATCH_FOLDER)
+    # List videos in both pCloud watch folders
+    from pcloud_client import list_folder as pcloud_list_raw
+    videos = []
+    for fid in [PCLOUD_WATCH_FOLDER_ID, PCLOUD_REVIVAL_FOLDER_ID]:
+        items = pcloud_list_raw(folder_id=fid)
+        video_exts = {'.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'}
+        for item in items:
+            if not item.get('isfolder') and os.path.splitext(item.get('name', ''))[1].lower() in video_exts:
+                videos.append(item)
+
     if not videos:
         print("[Watcher] No videos found or auth failed")
         return 0, 0, 0
