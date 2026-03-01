@@ -35,10 +35,18 @@ def send_telegram_message(message):
 #   I: Dailymotion Status, J: Dailymotion Link,
 #   K: Odysee Status, L: Odysee Link
 PLATFORM_COLUMNS = {
+    # Phase 1: YouTube -> platforms
     "Rumble":      {"status_col": 5, "link_col": 6},
     "BitChute":    {"status_col": 7, "link_col": 8},
     "Dailymotion": {"status_col": 9, "link_col": 10},
     "Odysee":      {"status_col": 11, "link_col": 12},
+    # Phase 2: Archive backup platforms
+    "pCloud":      {"status_col": 13, "link_col": 14},
+    "Internxt":    {"status_col": 15, "link_col": 16},
+    "Icedrive":    {"status_col": 17, "link_col": 18},
+    "Bilibili":    {"status_col": 19, "link_col": 20},
+    "Koofr":       {"status_col": 21, "link_col": 22},
+    "NicoNico":    {"status_col": 23, "link_col": 24},
 }
 
 HEADERS = [
@@ -46,7 +54,13 @@ HEADERS = [
     "Rumble Status", "Rumble Link",
     "Bitchute Status", "Bitchute Link",
     "Dailymotion Status", "Dailymotion Link",
-    "Odysee Status", "Odysee Link"
+    "Odysee Status", "Odysee Link",
+    "pCloud Status", "pCloud Link",
+    "Internxt Status", "Internxt Link",
+    "Icedrive Status", "Icedrive Link",
+    "Bilibili Status", "Bilibili Link",
+    "Koofr Status", "Koofr Link",
+    "NicoNico Status", "NicoNico Link",
 ]
 
 _gc_cache = None

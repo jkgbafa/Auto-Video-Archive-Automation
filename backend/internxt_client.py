@@ -100,14 +100,56 @@ def login(email=None, password=None):
     return False
 
 
+def _run_bridge(args, timeout=120):
+    """Run the Node.js bridge script and return parsed JSON."""
+    bridge = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'internxt_bridge.js')
+    if not os.path.exists(bridge):
+        return None
+
+    cmd = ['node', bridge] + args
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        if result.stdout.strip():
+            return json.loads(result.stdout.strip())
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError) as e:
+        print(f"[Internxt] Bridge error: {e}")
+    return None
+
+
 def list_folder(folder_id=None):
     """
     List contents of an Internxt folder.
+    Uses Node.js bridge (direct API) first, falls back to CLI.
     Returns list of dicts with name, is_folder, id, size info.
     """
     if not login():
         return []
 
+    # Try bridge first (faster, gives UUIDs)
+    bridge_args = ['list']
+    if folder_id:
+        bridge_args.append(str(folder_id))
+    bridge_result = _run_bridge(bridge_args, timeout=60)
+
+    if bridge_result and not bridge_result.get('error'):
+        items = []
+        for f in bridge_result.get('files', []):
+            items.append({
+                'name': f.get('name', ''),
+                'file_id': f.get('uuid') or f.get('fileId'),
+                'size': f.get('size', 0),
+                'is_folder': False,
+            })
+        for f in bridge_result.get('folders', []):
+            items.append({
+                'name': f.get('name', ''),
+                'folder_id': f.get('uuid'),
+                'is_folder': True,
+            })
+        if items:
+            return items
+
+    # Fall back to CLI
     args = ['list']
     if folder_id:
         args.extend(['--id', str(folder_id)])
@@ -124,7 +166,6 @@ def list_folder(folder_id=None):
         if not line or line.startswith('─') or line.startswith('┌') or line.startswith('└'):
             continue
 
-        # Try to parse structured output
         # The CLI outputs a table with: Type | Name | Size | Modified
         parts = [p.strip() for p in line.split('│') if p.strip()]
         if len(parts) >= 2:
@@ -136,7 +177,7 @@ def list_folder(folder_id=None):
                 items.append({
                     'name': name,
                     'is_folder': True,
-                    'folder_id': None,  # CLI doesn't always show IDs
+                    'folder_id': None,
                 })
             elif name and 'type' not in name.lower() and 'name' not in name.lower():
                 items.append({
@@ -152,7 +193,6 @@ def list_folder(folder_id=None):
             line = line.strip()
             if not line:
                 continue
-            # Simple heuristic: folders end with /
             if line.endswith('/'):
                 items.append({'name': line.rstrip('/'), 'is_folder': True})
             elif '.' in line:
